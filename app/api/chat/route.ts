@@ -5,6 +5,7 @@ import { EnglishTutorGraph } from "@/lib/ai/graph";
 import { ConversationSummarizer } from "@/lib/ai/summarizer";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 import { getOrCreateUserProfile } from "@/lib/db/user-profile";
+import { saveOrUpdateMistake } from "@/lib/db/mistakes";
 
 const DEFAULT_USER_ID = "default-user";
 
@@ -119,6 +120,24 @@ export async function POST(req: Request) {
       console.log("[API] Messages saved to database");
     } catch (error) {
       console.error("[DB Error] Failed to save messages:", error);
+    }
+
+    // Save mistake pattern to database if detected
+    if (correctionResult?.mistakeType && correctionResult?.mistakePattern) {
+      try {
+        await saveOrUpdateMistake(
+          DEFAULT_USER_ID,
+          correctionResult.mistakeType,
+          correctionResult.mistakePattern,
+          correctionResult.originalText || ""
+        );
+        console.log(
+          `[API] Mistake pattern saved: ${correctionResult.mistakeType} - ${correctionResult.mistakePattern}`
+        );
+      } catch (error) {
+        console.error("[API] Failed to save mistake pattern:", error);
+        // Don't fail the request if mistake saving fails
+      }
     }
 
     // Return the correction result
