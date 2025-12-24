@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { userMistakes } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, gte, sql } from "drizzle-orm";
 
 /**
  * Parse mistakeType format "category:subcategory" to extract category
@@ -138,6 +138,65 @@ export async function getUserMistakesByType(
     return mistakes;
   } catch (error) {
     console.error("[Mistakes] ✗ Error fetching mistakes by type:", error);
+    throw error;
+  }
+}
+
+/**
+ * Check if a mistake pattern is recurring (occurred 3+ times in last 7 days)
+ * @param userId - The user ID
+ * @param pattern - The mistake pattern to check
+ * @returns The mistake record if recurring (frequency >= 3), null otherwise
+ */
+export async function checkRecurringPattern(userId: string, pattern: string) {
+  try {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const mistakes = await db
+      .select()
+      .from(userMistakes)
+      .where(
+        and(
+          eq(userMistakes.userId, userId),
+          eq(userMistakes.pattern, pattern),
+          gte(userMistakes.lastOccurredAt, sevenDaysAgo)
+        )
+      )
+      .limit(1);
+
+    if (mistakes.length > 0 && mistakes[0].frequency >= 3) {
+      console.log(
+        `[Mistakes] ⚠️  Recurring pattern detected: '${pattern}' (frequency: ${mistakes[0].frequency})`
+      );
+      return mistakes[0];
+    }
+
+    return null;
+  } catch (error) {
+    console.error("[Mistakes] ✗ Error checking recurring pattern:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get top recurring mistakes for a user (ordered by frequency)
+ * @param userId - The user ID
+ * @param limit - Maximum number of results (default: 5)
+ * @returns Array of top recurring mistakes
+ */
+export async function getTopRecurringMistakes(userId: string, limit: number = 5) {
+  try {
+    const mistakes = await db
+      .select()
+      .from(userMistakes)
+      .where(eq(userMistakes.userId, userId))
+      .orderBy(sql`${userMistakes.frequency} DESC`)
+      .limit(limit);
+
+    return mistakes;
+  } catch (error) {
+    console.error("[Mistakes] ✗ Error fetching top recurring mistakes:", error);
     throw error;
   }
 }

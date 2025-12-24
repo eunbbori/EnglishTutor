@@ -26,6 +26,10 @@ export const correctionSchema = z.object({
     .string()
     .nullable()
     .describe('Recurring mistake pattern if detected (e.g., "preposition-usage", "article-usage", "subject-verb-agreement", "tense-confusion"). Set to null if no clear pattern.'),
+  insight: z
+    .string()
+    .optional()
+    .describe("Optional insight message for recurring mistakes (3+ occurrences in 7 days). Provides a brief rule summary and encouragement in Korean."),
 });
 
 export type AlternativeExpression = z.infer<typeof alternativeSchema>;
