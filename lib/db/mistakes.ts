@@ -200,3 +200,33 @@ export async function getTopRecurringMistakes(userId: string, limit: number = 5)
     throw error;
   }
 }
+
+/**
+ * Get recent mistakes from the last 7 days (ordered by frequency)
+ * @param userId - The user ID
+ * @param limit - Maximum number of results (default: 3)
+ * @returns Array of recent top mistakes
+ */
+export async function getRecentTopMistakes(userId: string, limit: number = 3) {
+  try {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const mistakes = await db
+      .select()
+      .from(userMistakes)
+      .where(
+        and(
+          eq(userMistakes.userId, userId),
+          gte(userMistakes.lastOccurredAt, sevenDaysAgo)
+        )
+      )
+      .orderBy(sql`${userMistakes.frequency} DESC`)
+      .limit(limit);
+
+    return mistakes;
+  } catch (error) {
+    console.error("[Mistakes] ✗ Error fetching recent top mistakes:", error);
+    throw error;
+  }
+}

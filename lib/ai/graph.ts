@@ -5,6 +5,8 @@ import { NeonCheckpointer } from "./checkpointer";
 import { UserProfileManager, RecurringMistake } from "./user-profile";
 import { ConversationSummarizer } from "./summarizer";
 import { correctionSchema } from "./schema";
+import { getOrCreateUserProfile } from "@/lib/db/user-profile";
+import { getRecentTopMistakes } from "@/lib/db/mistakes";
 
 /**
  * State definition for the conversation graph
@@ -119,6 +121,70 @@ IMPORTANT: Respond with a JSON object with these EXACT fields:
   }
 
   /**
+   * Build adaptive context based on user level and recent mistakes
+   */
+  private async buildAdaptiveContext(userId: string): Promise<string> {
+    try {
+      // Get user profile
+      const profile = await getOrCreateUserProfile(userId);
+      console.log(`[Adaptive Context] User level: ${profile.level}`);
+
+      // Get recent top mistakes (last 7 days, TOP 3)
+      const recentMistakes = await getRecentTopMistakes(userId, 3);
+      console.log(`[Adaptive Context] Recent mistakes: ${recentMistakes.length} found`);
+
+      // Build context string
+      let context = "\nUser Profile:";
+      context += `\n- Level: ${profile.level.toUpperCase()}`;
+
+      if (profile.learningGoal) {
+        context += `\n- Learning Goal: ${profile.learningGoal}`;
+      }
+
+      if (recentMistakes.length > 0) {
+        context += "\n- Recent Mistakes (last 7 days):";
+        recentMistakes.forEach((mistake) => {
+          context += `\n  * ${mistake.pattern} (${mistake.frequency}x)`;
+        });
+      }
+
+      // Add level-specific guidance
+      context += "\n\nLevel-Specific Guidance:";
+      switch (profile.level) {
+        case "beginner":
+          context += `
+- Use simple vocabulary and short sentences in explanations
+- Focus on basic grammar rules (tenses, articles, prepositions)
+- Provide step-by-step breakdown of corrections
+- Use more Korean in explanations for clarity
+- Be extra encouraging and patient`;
+          break;
+        case "intermediate":
+          context += `
+- Balance between simple and advanced vocabulary
+- Explain nuances and cultural context
+- Point out common intermediate-level mistakes
+- Encourage natural expression over literal translation
+- Build confidence with positive reinforcement`;
+          break;
+        case "advanced":
+          context += `
+- Use sophisticated vocabulary in alternatives
+- Focus on subtle nuances and stylistic improvements
+- Explain idiomatic expressions and cultural references
+- Challenge with advanced grammar concepts
+- Provide professional and academic register options`;
+          break;
+      }
+
+      return context;
+    } catch (error) {
+      console.error("[Graph] Error building adaptive context:", error);
+      return "";
+    }
+  }
+
+  /**
    * Build the state graph
    */
   private buildGraph() {
@@ -138,9 +204,8 @@ IMPORTANT: Respond with a JSON object with these EXACT fields:
   private async generateResponse(state: typeof ConversationState.State) {
     const { messages, summary, userProfile, userId } = state;
 
-    // Load user profile context
-    const profileManager = new UserProfileManager(userId);
-    const profileSummary = await profileManager.getRecurringMistakesSummary();
+    // Build adaptive context based on user level and recent mistakes
+    const adaptiveContext = await this.buildAdaptiveContext(userId);
 
     // Prepare context
     let contextMessages: BaseMessage[] = [];
@@ -161,12 +226,10 @@ IMPORTANT: Respond with a JSON object with these EXACT fields:
       throw new Error("Last message must be from user");
     }
 
-    // Build system prompt with user profile context
+    // Build system prompt with adaptive context
     const systemPrompt = this.SYSTEM_PROMPT.replace(
       "{USER_PROFILE_CONTEXT}",
-      profileSummary
-        ? `\n\nUser's recurring mistakes to pay attention to:\n${profileSummary}`
-        : ""
+      adaptiveContext
     );
 
     try {
