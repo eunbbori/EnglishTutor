@@ -122,6 +122,7 @@ IMPORTANT: Respond with a JSON object with these EXACT fields:
     this.model = new ChatGoogleGenerativeAI({
       model: "gemini-2.5-pro", // Latest model with best instruction-following
       temperature: 0.9, // Higher temperature for more diverse responses
+      apiKey: process.env.GOOGLE_API_KEY, // Explicitly pass API key
     });
     this.summarizer = new ConversationSummarizer(5);
     this.graph = this.buildGraph();
