@@ -28,7 +28,7 @@ export async function getOrCreateUserProfile(userId: string) {
       .insert(userProfiles)
       .values({
         userId,
-        level: "intermediate", // Default level as per Issue #2 requirement
+        level: "detailed", // Default: detailed explanations for new users
         learningGoal: null,
         recurringMistakes: [],
         learningPreferences: {},
@@ -51,7 +51,7 @@ export async function getOrCreateUserProfile(userId: string) {
 export async function updateUserProfile(
   userId: string,
   updates: {
-    level?: "beginner" | "intermediate" | "advanced";
+    level?: "detailed" | "concise";
     learningGoal?: string | null;
     recurringMistakes?: unknown[];
     learningPreferences?: Record<string, unknown>;

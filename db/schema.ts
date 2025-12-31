@@ -26,7 +26,7 @@ export const messages = pgTable("messages", {
 export const userProfiles = pgTable("user_profiles", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: text("user_id").notNull().unique(),
-  level: text("level", { enum: ["beginner", "intermediate", "advanced"] }).notNull().default("beginner"), // User English level
+  level: text("level", { enum: ["detailed", "concise"] }).notNull().default("detailed"), // Explanation style preference
   learningGoal: text("learning_goal"), // User's learning objectives
   recurringMistakes: jsonb("recurring_mistakes").notNull().default('[]'), // Array of mistake patterns
   // Example: [{ pattern: "subject-verb agreement", examples: ["he go", "she have"], count: 5 }]

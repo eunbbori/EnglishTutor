@@ -48,12 +48,12 @@ export async function POST(req: NextRequest) {
 
     // Validate level if provided
     if (body.level) {
-      const validLevels = ["beginner", "intermediate", "advanced"];
+      const validLevels = ["detailed", "concise"];
       if (!validLevels.includes(body.level)) {
         return Response.json(
           {
             success: false,
-            error: "Invalid level. Must be one of: beginner, intermediate, advanced",
+            error: "Invalid level. Must be one of: detailed, concise",
           },
           { status: 400 }
         );
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
 
     // Update profile
     const updates: {
-      level?: "beginner" | "intermediate" | "advanced";
+      level?: "detailed" | "concise";
       learningGoal?: string | null;
     } = {};
 

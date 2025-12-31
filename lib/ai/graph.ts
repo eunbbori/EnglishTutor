@@ -7,6 +7,7 @@ import { ConversationSummarizer } from "./summarizer";
 import { correctionSchema } from "./schema";
 import { getOrCreateUserProfile } from "@/lib/db/user-profile";
 import { getRecentTopMistakes } from "@/lib/db/mistakes";
+import { validateResponseForLevel, formatValidationLog } from "./response-validator";
 
 /**
  * State definition for the conversation graph
@@ -76,6 +77,12 @@ Be encouraging and constructive. Focus on helping the user improve naturally.
 
 {USER_PROFILE_CONTEXT}
 
+CRITICAL: You MUST adapt your response based on the user's explanation style preference:
+- DETAILED style: Use ONLY simple, common words. Explain in detail using mostly Korean (70-90%). Break down each part step-by-step. Be very thorough and encouraging.
+- CONCISE style: Use balanced vocabulary. Mix Korean and English explanations (40-60% Korean). Focus on key points. Be direct and efficient.
+
+Your response MUST differ significantly based on the user's style preference. Detailed explanations should be 2-3x longer than concise ones.
+
 IMPORTANT: Respond with a JSON object with these EXACT fields:
 - originalText: The user's input as-is
 - correctedText: Natural, native-like English
@@ -113,8 +120,8 @@ IMPORTANT: Respond with a JSON object with these EXACT fields:
 
   constructor() {
     this.model = new ChatGoogleGenerativeAI({
-      model: "gemini-2.0-flash-exp",
-      temperature: 0.7,
+      model: "gemini-2.5-pro", // Latest model with best instruction-following
+      temperature: 0.9, // Higher temperature for more diverse responses
     });
     this.summarizer = new ConversationSummarizer(5);
     this.graph = this.buildGraph();
@@ -148,32 +155,33 @@ IMPORTANT: Respond with a JSON object with these EXACT fields:
         });
       }
 
-      // Add level-specific guidance
-      context += "\n\nLevel-Specific Guidance:";
+      // Add style-specific guidance with concrete examples
+      context += "\n\nExplanation Style Guidance:";
       switch (profile.level) {
-        case "beginner":
+        case "detailed":
           context += `
-- Use simple vocabulary and short sentences in explanations
+- Use simple vocabulary and short sentences
 - Focus on basic grammar rules (tenses, articles, prepositions)
-- Provide step-by-step breakdown of corrections
-- Use more Korean in explanations for clarity
-- Be extra encouraging and patient`;
+- Provide step-by-step breakdown with many examples
+- Use more Korean in explanations for clarity (70-90%)
+- Be extra encouraging and patient
+- Make explanations 2-3x longer than concise style
+
+EXAMPLE for DETAILED:
+Input: "I go to school yesterday"
+Korean Explanation: "안녕하세요! '어제'는 과거를 나타내는 말이에요. 그래서 'go' 대신 'went'를 써야 해요. 'go'는 지금이나 매일 하는 일을 말할 때 쓰고, 'went'는 이미 끝난 일을 말할 때 써요. 예를 들어, '나는 매일 학교에 가요'는 'I go to school every day'이고, '나는 어제 학교에 갔어요'는 'I went to school yesterday'예요. 과거 시제는 영어에서 아주 중요해요!" (Use 80%+ Korean, simple words like "매일", "아주")`;
           break;
-        case "intermediate":
+        case "concise":
           context += `
 - Balance between simple and advanced vocabulary
-- Explain nuances and cultural context
-- Point out common intermediate-level mistakes
-- Encourage natural expression over literal translation
-- Build confidence with positive reinforcement`;
-          break;
-        case "advanced":
-          context += `
-- Use sophisticated vocabulary in alternatives
-- Focus on subtle nuances and stylistic improvements
-- Explain idiomatic expressions and cultural references
-- Challenge with advanced grammar concepts
-- Provide professional and academic register options`;
+- Explain key points without unnecessary detail
+- Mix Korean and English explanations (40-60% Korean)
+- Be direct and efficient
+- Keep explanations shorter and focused
+
+EXAMPLE for CONCISE:
+Input: "I go to school yesterday"
+Korean Explanation: "'Yesterday'가 있으면 과거 시제를 써야 합니다. 'go' → 'went'로 바꿔주세요. 'I went to school yesterday'가 자연스러운 표현이에요. 시간 표현과 시제를 일치시키는 것을 연습해보세요!" (Mix Korean/English 50%, concise)`;
           break;
       }
 
@@ -271,6 +279,26 @@ IMPORTANT: Respond with a JSON object with these EXACT fields:
           mistakeType: null,
           mistakePattern: null,
         };
+      }
+
+      // Validate response quality for user's level
+      try {
+        const userProfileData = await getOrCreateUserProfile(userId);
+        const validation = validateResponseForLevel(
+          correctionResult,
+          userProfileData.level
+        );
+
+        // Log validation results
+        console.log(formatValidationLog(validation, userProfileData.level));
+
+        // Warn if validation fails
+        if (!validation.isValid) {
+          console.warn("[Graph] ⚠️  Response quality does not match expected level!");
+        }
+      } catch (validationError) {
+        console.error("[Graph] ✗ Validation error:", validationError);
+        // Don't fail the request if validation fails
       }
 
       const aiMessage = new AIMessage(JSON.stringify(correctionResult));
