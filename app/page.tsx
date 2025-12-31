@@ -102,7 +102,7 @@ export default function Home() {
         </div>
       </header>
 
-      <ChatList messages={messages} />
+      <ChatList messages={messages} isLoading={isLoading} />
       <ChatInput onSend={handleSend} isLoading={isLoading} />
 
       {/* Floating Settings Button */}
