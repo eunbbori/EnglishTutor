@@ -45,8 +45,8 @@ function generateInsightMessage(
 export async function POST(req: Request) {
   try {
     // Validate environment variables
-    if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY && !process.env.GOOGLE_API_KEY) {
-      console.error("[API Error] Missing GOOGLE_GENERATIVE_AI_API_KEY or GOOGLE_API_KEY");
+    if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+      console.error("[API Error] Missing GOOGLE_GENERATIVE_AI_API_KEY");
       return new Response(
         JSON.stringify({
           error: "Server configuration error",
