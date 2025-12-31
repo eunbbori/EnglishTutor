@@ -1,0 +1,198 @@
+# Project Specification Rules (.cursorrules)
+
+You must strictly follow all rules defined in this document.
+Do not deviate unless explicitly instructed.
+
+==================================================
+
+1. # Project Overview
+
+Project Goal:
+
+- Build a sports prediction MVP platform using AI.
+
+Target Users:
+
+- Sports fans and bettors seeking data-driven insights.
+
+Core Value:
+
+- Objective prediction based on data, not intuition.
+
+================================================== 2. Tech Stack (Strict)
+==================================================
+
+You MUST use the following stack only:
+
+- Framework: Next.js 16 (App Router)
+- Language: TypeScript (Strict mode enabled)
+- Styling: Tailwind CSS + Shadcn UI
+- State Management: Zustand
+
+================================================== 3. TypeScript & General Rules
+==================================================
+
+- TypeScript strict mode must be enabled.
+- The `any` type is strictly forbidden.
+- All types must be explicitly defined.
+- Prefer type inference only when it is 100% safe.
+
+================================================== 4. Component Rules
+==================================================
+
+Component Definition:
+
+- All components MUST be written as arrow functions.
+- Use the following format ONLY:
+
+  export const ComponentName = () => {}
+
+Props:
+
+- Props MUST be defined using `interface`.
+- Props interfaces MUST use the `Props` suffix.
+  Example: UserCardProps
+
+Export:
+
+- All components must be named exports.
+
+================================================== 5. Styling Rules
+==================================================
+
+- Use Tailwind CSS for all styling.
+- Class order must follow automatic sorting (Headwind).
+- Conditional styling MUST use `cn()` utility (clsx + tailwind-merge).
+- Inline styles are forbidden unless unavoidable.
+
+================================================== 6. Naming Conventions
+==================================================
+
+File & Folder Naming:
+
+- Component files: PascalCase
+  Example: UserProfile.tsx
+
+- Utility / config files: camelCase
+  Example: authUtils.ts
+
+- Next.js route folders: kebab-case
+  Example: app/my-page/page.tsx
+
+Variables & Functions:
+
+- camelCase
+  Example: fetchUserData
+
+Constants:
+
+- UPPER_SNAKE_CASE
+  Example: MAX_RETRY_COUNT
+
+Types & Interfaces:
+
+- PascalCase
+  Example: UserResponse
+
+================================================== 7. Function Naming Rules (Verb-Based)
+==================================================
+
+Use consistent verb prefixes to make intent predictable.
+
+Data Fetching:
+
+- fetch... : API calls
+  Example: fetchUserList
+
+- get... : Derived or internal values
+  Example: getUserFullName
+
+User Actions:
+
+- handle... : Internal event handlers
+  Example: handleSubmit
+
+- on... : Props event handlers
+  Example: onClick
+
+State Management:
+
+- set... : Local state updates
+  Example: setUser
+
+- update... : Remote or DB updates
+  Example: updateUserProfile
+
+Validation:
+
+- check... : Validation with side effects
+  Example: checkPermission
+
+- validate... : Returns boolean or throws error
+  Example: validateEmail
+
+================================================== 8. Boolean Naming Rules
+==================================================
+
+Boolean variables MUST use question-based prefixes:
+
+- is... : State conditions
+  Example: isLoading, isVisible
+
+- has... : Ownership or inclusion
+  Example: hasPermission
+
+- should... : Conditional execution or rendering
+  Example: shouldRenderSidebar
+
+Forbidden:
+
+- loading, open, valid (noun/adjective-only names)
+
+================================================== 9. Type & Interface Suffix Rules
+==================================================
+
+Use suffixes to clarify responsibility:
+
+- ...Props : Component props
+- ...Response : API responses
+- ...Params : Function parameter objects
+
+================================================== 10. Error Handling
+==================================================
+
+- All API errors MUST be handled.
+- Errors MUST be shown to users using a Toast notification.
+- Silent failures are forbidden.
+
+================================================== 11. Comments & Documentation
+==================================================
+
+- Complex logic (10+ lines) MUST include Korean comments.
+- Use JSDoc for functions with non-obvious behavior.
+- Comments should explain "why", not "what".
+
+================================================== 12. Component Size Rules
+==================================================
+
+Maximum lines per component: 250 lines
+
+Small Components (50–100 lines):
+
+- Buttons
+- Inputs
+- Cards
+- Single-responsibility UI elements
+
+Medium Components (100–250 lines):
+
+- Forms
+- Modals
+- Navigation bars
+- Components with multiple child elements but limited complexity
+
+Large components beyond this size are NOT allowed.
+
+==================================================
+END OF RULES
+==================================================
