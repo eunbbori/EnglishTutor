@@ -7,6 +7,9 @@ import { HumanMessage, AIMessage } from "@langchain/core/messages";
 import { getOrCreateUserProfile } from "@/lib/db/user-profile";
 import { saveOrUpdateMistake, checkRecurringPattern } from "@/lib/db/mistakes";
 
+// Vercel timeout configuration (max 60s for Hobby plan)
+export const maxDuration = 60;
+
 const DEFAULT_USER_ID = "default-user";
 
 /**
@@ -41,6 +44,35 @@ function generateInsightMessage(
 
 export async function POST(req: Request) {
   try {
+    // Validate environment variables
+    if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY && !process.env.GOOGLE_API_KEY) {
+      console.error("[API Error] Missing GOOGLE_GENERATIVE_AI_API_KEY or GOOGLE_API_KEY");
+      return new Response(
+        JSON.stringify({
+          error: "Server configuration error",
+          details: "Google API key not configured"
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    if (!process.env.DATABASE_URL) {
+      console.error("[API Error] Missing DATABASE_URL");
+      return new Response(
+        JSON.stringify({
+          error: "Server configuration error",
+          details: "Database URL not configured"
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
     const { messages: userMessages, chatId } = await req.json();
 
     // Get the last user message
