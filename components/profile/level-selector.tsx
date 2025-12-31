@@ -13,7 +13,11 @@ interface UserProfile {
   updatedAt: string;
 }
 
-export function LevelSelector() {
+interface LevelSelectorProps {
+  compact?: boolean;
+}
+
+export function LevelSelector({ compact = false }: LevelSelectorProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isDetailed, setIsDetailed] = useState(true); // true = detailed, false = concise
   const [learningGoal, setLearningGoal] = useState("");
@@ -94,7 +98,7 @@ export function LevelSelector() {
 
   if (isLoading) {
     return (
-      <div className="bg-card border rounded-lg p-4">
+      <div className={compact ? "" : "bg-card border rounded-lg p-4"}>
         <div className="animate-pulse">
           <div className="h-4 bg-muted rounded w-1/4 mb-4"></div>
           <div className="h-10 bg-muted rounded mb-2"></div>
@@ -104,6 +108,58 @@ export function LevelSelector() {
     );
   }
 
+  // Compact mode for floating card
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isDetailed}
+            onChange={(e) => setIsDetailed(e.target.checked)}
+            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary cursor-pointer"
+          />
+          <div className="flex-1">
+            <div className="text-sm font-medium">자세한 설명</div>
+            <p className="text-xs text-muted-foreground">
+              {isDetailed
+                ? "한국어 위주로 상세하게 설명"
+                : "핵심만 간결하게 설명"}
+            </p>
+          </div>
+        </label>
+
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-muted-foreground">
+            학습 목표 (선택사항)
+          </label>
+          <input
+            type="text"
+            value={learningGoal}
+            onChange={(e) => setLearningGoal(e.target.value)}
+            placeholder="예: 비즈니스 영어 회화 향상"
+            className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+
+        <button
+          onClick={handleSave}
+          disabled={isSaving}
+          className="w-full bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {isSaving ? "저장 중..." : "저장"}
+        </button>
+
+        {profile && (
+          <div className="text-xs text-muted-foreground text-center">
+            {new Date(profile.updatedAt).toLocaleString("ko-KR")}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Full mode (original)
   return (
     <div className="bg-card border rounded-lg p-4 space-y-4">
       <div>
