@@ -36,6 +36,20 @@
       "when": 1767085075441,
       "tag": "0004_volatile_hellion",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1768825381234,
+      "tag": "0005_tricky_tombstone",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1768910432743,
+      "tag": "0006_spicy_boomerang",
+      "breakpoints": true
     }
   ]
 }
