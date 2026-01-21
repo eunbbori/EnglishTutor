@@ -8,9 +8,10 @@ import { Send } from "lucide-react";
 interface ChatInputProps {
   onSend: (message: string) => void;
   isLoading?: boolean;
+  placeholder?: string;
 }
 
-export function ChatInput({ onSend, isLoading = false }: ChatInputProps) {
+export function ChatInput({ onSend, isLoading = false, placeholder }: ChatInputProps) {
   const [input, setInput] = useState("");
 
   const handleSend = () => {
@@ -34,7 +35,7 @@ export function ChatInput({ onSend, isLoading = false }: ChatInputProps) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="영어 문장을 입력하거나 한국어로 번역할 내용을 입력하세요..."
+          placeholder={placeholder || "오늘 하루를 영어로 적어보세요..."}
           className="min-h-[60px] max-h-[200px] resize-none"
           disabled={isLoading}
         />
