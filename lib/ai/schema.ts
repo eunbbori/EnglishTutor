@@ -1,16 +1,16 @@
 import { z } from "zod";
 
 export const alternativeSchema = z.object({
-  type: z.enum(["Formal", "Casual", "Idiomatic"]).describe("The style of the alternative"),
+  type: z.enum(["Casual", "Expressive", "Simple"]).describe("The style of the alternative for diary writing"),
   text: z.string().describe("The alternative expression"),
 });
 
-// Mistake type classification schema
+// Mistake type classification schema for diary corrections
 export const mistakeTypeSchema = z
   .string()
   .nullable()
   .describe(
-    'Structured mistake classification in format "category:subcategory". Examples: "grammar:tense", "grammar:subject_verb_agreement", "grammar:preposition", "grammar:article", "vocabulary:word_choice", "vocabulary:collocation", "style:formality", "style:clarity". Set to null if no mistake detected.'
+    'Structured mistake classification in format "category:subcategory". Examples: "grammar:tense", "grammar:subject_verb_agreement", "grammar:preposition", "grammar:article", "vocabulary:word_choice", "vocabulary:collocation", "expression:unnatural", "expression:direct_translation". Set to null if no mistake detected.'
   );
 
 export const correctionSchema = z.object({
@@ -20,7 +20,7 @@ export const correctionSchema = z.object({
   alternatives: z
     .array(alternativeSchema)
     .length(3)
-    .describe("3 alternative expressions (Formal, Casual, Idiomatic)"),
+    .describe("3 alternative expressions (Casual, Expressive, Simple)"),
   mistakeType: mistakeTypeSchema,
   mistakePattern: z
     .string()

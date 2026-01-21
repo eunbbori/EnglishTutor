@@ -29,11 +29,18 @@ export async function saveOrUpdateMistake(
     // Extract category from mistakeType (e.g., "grammar:tense" -> "grammar")
     const category = parseMistakeCategory(mistakeType);
 
-    // Validate category
-    const validCategories = ["grammar", "vocabulary", "pronunciation", "fluency", "comprehension"];
-    if (!validCategories.includes(category)) {
-      console.warn(`[Mistakes] Invalid category: ${category}, defaulting to 'grammar'`);
-    }
+    // Map category to database enum (expression -> grammar for now)
+    const categoryMap: Record<string, string> = {
+      grammar: "grammar",
+      vocabulary: "vocabulary",
+      pronunciation: "pronunciation",
+      fluency: "fluency",
+      comprehension: "comprehension",
+      expression: "grammar", // Map expression errors to grammar category
+      style: "grammar", // Map style errors to grammar category
+    };
+
+    const mappedCategory = categoryMap[category] || "grammar";
 
     // Check if this pattern already exists for this user
     const existingMistakes = await db
@@ -76,7 +83,7 @@ export async function saveOrUpdateMistake(
         .insert(userMistakes)
         .values({
           userId,
-          mistakeType: category as "grammar" | "vocabulary" | "pronunciation" | "fluency" | "comprehension",
+          mistakeType: mappedCategory as "grammar" | "vocabulary" | "pronunciation" | "fluency" | "comprehension",
           pattern,
           frequency: 1,
           examples: [example],

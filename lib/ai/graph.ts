@@ -10,6 +10,13 @@ import { getRecentTopMistakes } from "@/lib/db/mistakes";
 import { validateResponseForLevel, formatValidationLog } from "./response-validator";
 
 /**
+ * Diary context type for Daily English
+ */
+export interface DiaryContext {
+  mode: "diary";
+}
+
+/**
  * State definition for the conversation graph
  */
 const ConversationState = Annotation.Root({
@@ -44,6 +51,10 @@ const ConversationState = Annotation.Root({
     reducer: (_, update) => update,
     default: () => null,
   }),
+  diaryContext: Annotation<DiaryContext>({
+    reducer: (_, update) => update,
+    default: () => ({ mode: "diary" }),
+  }),
 });
 
 /**
@@ -59,64 +70,58 @@ export class EnglishTutorGraph {
   private graph: ReturnType<typeof this.buildGraph>;
   private summarizer: ConversationSummarizer;
 
-  private readonly SYSTEM_PROMPT = `You are an expert English tutor for Korean speakers with 10 years of experience in Silicon Valley.
+  private readonly SYSTEM_PROMPT = `You are Daily English, a friendly and encouraging English diary tutor for Korean learners.
 
 Your role:
-1. Analyze the user's input (Korean or awkward English) for grammatical errors, awkward phrasing, and unnatural expressions
-2. Provide a natural, native-like English correction
-3. Explain the corrections in Korean, focusing on:
-   - Grammar rules
-   - Cultural nuances
-   - Common mistakes Korean speakers make
-4. Offer three alternative expressions:
-   - Formal: For business or academic contexts
-   - Casual: For everyday conversation
-   - Idiomatic: Using native English idioms
-
-Be encouraging and constructive. Focus on helping the user improve naturally.
+1. Help users practice English by correcting their diary entries
+2. Be warm, supportive, and patient - this is about building a daily writing habit
+3. Explain corrections in simple Korean that beginners can understand
+4. Focus on natural, everyday expressions rather than formal English
+5. Offer alternative ways to express their thoughts
 
 {USER_PROFILE_CONTEXT}
 
-CRITICAL: You MUST adapt your response based on the user's explanation style preference:
-- DETAILED style: Use ONLY simple, common words. Explain in detail using mostly Korean (70-90%). Break down each part step-by-step. Be very thorough and encouraging.
-- CONCISE style: Use balanced vocabulary. Mix Korean and English explanations (40-60% Korean). Focus on key points. Be direct and efficient.
+Key focus areas for diary writing:
+- Past tense usage (since diaries usually describe what happened)
+- Natural expressions for feelings and emotions
+- Common daily life vocabulary
+- Simple and clear sentence structures
+- Korean-to-English translation patterns to avoid
 
-Your response MUST differ significantly based on the user's style preference. Detailed explanations should be 2-3x longer than concise ones.
+When correcting:
+- Be encouraging! Praise what they did well
+- Explain WHY something is wrong, not just what's correct
+- Use simple examples they can relate to
+- If the entry is mostly correct, still provide helpful tips
 
 IMPORTANT: Respond with a JSON object with these EXACT fields:
-- originalText: The user's input as-is
-- correctedText: Natural, native-like English
-- koreanExplanation: Clear explanation in Korean
+- originalText: The user's diary entry as-is
+- correctedText: Natural, corrected English suitable for a diary
+- koreanExplanation: Friendly, encouraging explanation in Korean. Start with positive feedback, then explain corrections simply.
 - alternatives: Array of exactly 3 objects, each with:
-  * type: "Formal", "Casual", or "Idiomatic"
-  * text: The alternative expression
+  * type: "Casual", "Expressive", or "Simple"
+  * text: Alternative ways to express the same idea
 - mistakeType: Classify the mistake in format "category:subcategory". REQUIRED field.
   * Grammar errors:
-    - "grammar:tense" (wrong tense: "I go yesterday" → "I went yesterday")
+    - "grammar:tense" (wrong tense, especially past tense)
     - "grammar:subject_verb_agreement" ("he go" → "he goes")
-    - "grammar:preposition" (wrong/missing preposition: "go school" → "go to school")
-    - "grammar:article" (wrong/missing article: "I am student" → "I am a student")
+    - "grammar:preposition" (wrong/missing preposition)
+    - "grammar:article" (wrong/missing article)
     - "grammar:word_order" (incorrect sentence structure)
     - "grammar:plural" (singular/plural mistakes)
-    - "grammar:voice" (active/passive voice issues)
-    - "grammar:modals" (modal verb mistakes)
+  * Expression errors:
+    - "expression:unnatural" (grammatically correct but unnatural)
+    - "expression:too_formal" (too stiff for a diary)
+    - "expression:direct_translation" (translated directly from Korean)
   * Vocabulary errors:
     - "vocabulary:word_choice" (wrong word selection)
     - "vocabulary:collocation" (unnatural word combinations)
-    - "vocabulary:register" (inappropriate formality level)
-  * Style improvements:
-    - "style:formality" (formality level adjustment needed)
-    - "style:clarity" (unclear or ambiguous expression)
-    - "style:conciseness" (too wordy or redundant)
-  * Set to null ONLY if the input is already perfect native English
-- mistakePattern: ALWAYS identify the grammatical pattern if there's an error. Use kebab-case categories:
-  * "preposition-usage" (missing or wrong prepositions like "go school" → "go to school")
-  * "article-usage" (missing or wrong articles like "I am student" → "I am a student")
-  * "subject-verb-agreement" (e.g., "he go" → "he goes")
-  * "tense-confusion" (wrong tense usage)
-  * "word-order" (incorrect sentence structure)
-  * "plural-forms" (singular/plural mistakes)
-  * Set to null ONLY if the input is already correct or is a pure translation request`;
+  * Set to null ONLY if the input is already natural English
+- mistakePattern: ALWAYS identify the pattern if there's an error. Use kebab-case:
+  * "preposition-usage", "article-usage", "subject-verb-agreement", "tense-confusion"
+  * "direct-translation" (Korean sentence structure directly translated)
+  * "word-order", "collocation", "vocabulary-choice"
+  * Set to null ONLY if the input is already correct`;
 
   constructor() {
     this.model = new ChatGoogleGenerativeAI({
@@ -127,6 +132,7 @@ IMPORTANT: Respond with a JSON object with these EXACT fields:
     this.summarizer = new ConversationSummarizer(5);
     this.graph = this.buildGraph();
   }
+
 
   /**
    * Build adaptive context based on user level and recent mistakes
@@ -156,33 +162,32 @@ IMPORTANT: Respond with a JSON object with these EXACT fields:
         });
       }
 
-      // Add style-specific guidance with concrete examples
-      context += "\n\nExplanation Style Guidance:";
+      // Add style-specific guidance for diary writing
+      context += "\n\nExplanation Style Guidance for Diary:";
       switch (profile.level) {
         case "detailed":
           context += `
 - Use simple vocabulary and short sentences
-- Focus on basic grammar rules (tenses, articles, prepositions)
-- Provide step-by-step breakdown with many examples
-- Use more Korean in explanations for clarity (70-90%)
-- Be extra encouraging and patient
-- Make explanations 2-3x longer than concise style
+- Focus on basic grammar rules (past tense, articles, prepositions)
+- Provide step-by-step breakdown with relatable examples
+- Use mostly Korean in explanations (70-90%)
+- Be warm and encouraging - this is about building a writing habit!
+- Make explanations friendly and conversational
 
 EXAMPLE for DETAILED:
-Input: "I go to school yesterday"
-Korean Explanation: "안녕하세요! '어제'는 과거를 나타내는 말이에요. 그래서 'go' 대신 'went'를 써야 해요. 'go'는 지금이나 매일 하는 일을 말할 때 쓰고, 'went'는 이미 끝난 일을 말할 때 써요. 예를 들어, '나는 매일 학교에 가요'는 'I go to school every day'이고, '나는 어제 학교에 갔어요'는 'I went to school yesterday'예요. 과거 시제는 영어에서 아주 중요해요!" (Use 80%+ Korean, simple words like "매일", "아주")`;
+Input: "Today I eat delicious food"
+Korean Explanation: "오늘 일기 잘 쓰셨어요! 👏 한 가지만 고치면 더 자연스러워져요. 일기는 보통 '오늘 있었던 일'을 쓰는 거라서 과거형을 써요. 'eat'의 과거형은 'ate'예요! 'Today I ate delicious food' 이렇게 쓰면 완벽해요. 앞으로 일기 쓸 때 '오늘 ~했다'는 과거형으로 써보세요!"`;
           break;
         case "concise":
           context += `
-- Balance between simple and advanced vocabulary
-- Explain key points without unnecessary detail
-- Mix Korean and English explanations (40-60% Korean)
-- Be direct and efficient
-- Keep explanations shorter and focused
+- Keep explanations short but helpful
+- Mix Korean and English (40-60% Korean)
+- Focus on the key correction point
+- Be friendly but efficient
 
 EXAMPLE for CONCISE:
-Input: "I go to school yesterday"
-Korean Explanation: "'Yesterday'가 있으면 과거 시제를 써야 합니다. 'go' → 'went'로 바꿔주세요. 'I went to school yesterday'가 자연스러운 표현이에요. 시간 표현과 시제를 일치시키는 것을 연습해보세요!" (Mix Korean/English 50%, concise)`;
+Input: "Today I eat delicious food"
+Korean Explanation: "좋은 표현이에요! 일기는 과거 일을 쓰는 거라서 'eat' → 'ate'로 바꿔주세요. 'Today I ate delicious food'가 자연스러워요."`;
           break;
       }
 
@@ -211,7 +216,7 @@ Korean Explanation: "'Yesterday'가 있으면 과거 시제를 써야 합니다.
    * Node: Generate AI response with correction
    */
   private async generateResponse(state: typeof ConversationState.State) {
-    const { messages, summary, userProfile, userId } = state;
+    const { messages, summary, userId } = state;
 
     // Build adaptive context based on user level and recent mistakes
     const adaptiveContext = await this.buildAdaptiveContext(userId);
@@ -236,10 +241,10 @@ Korean Explanation: "'Yesterday'가 있으면 과거 시제를 써야 합니다.
     }
 
     // Build system prompt with adaptive context
-    const systemPrompt = this.SYSTEM_PROMPT.replace(
-      "{USER_PROFILE_CONTEXT}",
-      adaptiveContext
-    );
+    const systemPrompt = this.SYSTEM_PROMPT
+      .replace("{USER_PROFILE_CONTEXT}", adaptiveContext);
+
+    console.log("[Graph] Generating diary correction response");
 
     try {
       // Call LLM with proper system message

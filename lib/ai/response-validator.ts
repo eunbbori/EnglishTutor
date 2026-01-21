@@ -108,10 +108,10 @@ export function calculateMetrics(response: {
   // Alternatives count
   const alternativesCount = alternatives.length;
 
-  // Check if all alternative types are present
+  // Check if all alternative types are present (for diary mode: Casual, Expressive, Simple)
   const types = new Set(alternatives.map((alt) => alt.type));
   const hasAllAlternativeTypes =
-    types.has("Formal") && types.has("Casual") && types.has("Idiomatic");
+    types.has("Casual") && types.has("Expressive") && types.has("Simple");
 
   return {
     vocabularyComplexity,
@@ -178,7 +178,7 @@ export function validateResponseForLevel(
 
   if (!metrics.hasAllAlternativeTypes) {
     warnings.push(
-      "Missing one or more alternative types (Formal, Casual, Idiomatic)"
+      "Missing one or more alternative types (Casual, Expressive, Simple)"
     );
   }
 

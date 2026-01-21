@@ -6,6 +6,9 @@ import { ConversationSummarizer } from "@/lib/ai/summarizer";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 import { getOrCreateUserProfile } from "@/lib/db/user-profile";
 import { saveOrUpdateMistake, checkRecurringPattern } from "@/lib/db/mistakes";
+import { auth } from "@/lib/auth";
+import { getUsageStatus, incrementUsage } from "@/lib/subscription/check-usage";
+import { recordDiaryEntry } from "@/lib/streak/streak-manager";
 
 // Vercel timeout configuration (max 60s for Hobby plan)
 export const maxDuration = 60;
@@ -27,19 +30,19 @@ function generateInsightMessage(
   const patternName = pattern.replace(/-/g, " ");
   const [category, subcategory] = mistakeType.split(":");
 
-  // Pattern-specific insights
+  // Pattern-specific insights for diary writing
   const insights: Record<string, string> = {
-    "tense-confusion": "시제 사용에 주의하세요! 과거, 현재, 미래를 명확히 구분하는 것이 중요합니다. 시간 표현(yesterday, tomorrow 등)과 함께 연습해보세요.",
-    "subject-verb-agreement": "주어와 동사의 일치에 집중하세요! 3인칭 단수(he/she/it)일 때 동사에 -s를 붙이는 것을 잊지 마세요.",
-    "preposition-usage": "전치사 사용을 복습하세요! 각 동사나 명사와 어울리는 전치사를 함께 외우면 도움이 됩니다.",
-    "article-usage": "관사(a/an/the) 사용법을 확인하세요! 셀 수 있는 명사 앞에는 관사가 필요합니다.",
-    "word-order": "어순을 다시 확인하세요! 영어는 주어-동사-목적어 순서가 기본입니다.",
-    "plural-forms": "복수형 사용에 주의하세요! 2개 이상일 때는 -s나 -es를 붙여야 합니다.",
+    "tense-confusion": "일기는 보통 과거에 있었던 일을 쓰는 거라서, 과거 시제를 자주 써요. 'go → went', 'eat → ate' 같은 불규칙 과거형을 틈틈이 외워보세요!",
+    "subject-verb-agreement": "주어가 he/she/it일 때는 동사에 -s를 붙여야 해요. 'She goes', 'It works' 처럼요!",
+    "preposition-usage": "전치사는 영어에서 정말 중요해요! 'at home', 'in the morning', 'on Monday' 같은 표현을 통째로 외우면 도움이 돼요.",
+    "article-usage": "a/an/the 사용이 어려운 건 당연해요! 특정한 것을 말할 때는 'the', 처음 말하는 것은 'a/an'을 써요.",
+    "word-order": "한국어와 영어는 어순이 달라요! 영어는 '주어 + 동사 + 목적어' 순서로 써야 해요.",
+    "direct-translation": "한국어를 그대로 번역하면 어색할 수 있어요. 영어식 표현을 조금씩 익혀봐요!",
   };
 
-  const specificInsight = insights[pattern] || `'${patternName}' 패턴을 다시 한번 복습해보세요!`;
+  const specificInsight = insights[pattern] || `'${patternName}' 부분을 조금만 더 연습하면 금방 늘어요!`;
 
-  return `💡 **반복되는 실수 패턴 발견!** (${frequency}회)\n\n${specificInsight}\n\n꾸준히 연습하면 반드시 개선됩니다. 화이팅! 💪`;
+  return `📝 **자주 틀리는 부분이에요** (${frequency}회)\n\n${specificInsight}\n\n매일 일기 쓰면서 자연스럽게 실력이 늘거에요! 오늘도 수고했어요 ✨`;
 }
 
 export async function POST(req: Request) {
@@ -73,7 +76,34 @@ export async function POST(req: Request) {
       );
     }
 
-    const { messages: userMessages, chatId } = await req.json();
+    // Check authentication and usage limits
+    const session = await auth();
+    const userId = session?.user?.id || DEFAULT_USER_ID;
+    const isAuthenticated = !!session?.user?.id;
+
+    // Check usage limits for authenticated users
+    if (isAuthenticated) {
+      const usageStatus = await getUsageStatus(userId);
+      if (!usageStatus.canUse) {
+        return new Response(
+          JSON.stringify({
+            error: "Usage limit exceeded",
+            code: "USAGE_LIMIT_EXCEEDED",
+            message: "오늘의 무료 사용량을 모두 사용했습니다. Premium으로 업그레이드하세요.",
+            usageStatus,
+          }),
+          {
+            status: 429,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+    }
+
+    const { messages: userMessages, chatId, mode } = await req.json();
+
+    // Diary context (simplified from business context)
+    const diaryContext = { mode: mode || "diary" };
 
     // Get the last user message
     const lastUserMessage = userMessages[userMessages.length - 1];
@@ -90,7 +120,7 @@ export async function POST(req: Request) {
       const [newChat] = await db
         .insert(chats)
         .values({
-          userId: DEFAULT_USER_ID,
+          userId: userId,
           title: lastUserMessage.content.substring(0, 50),
         })
         .returning();
@@ -98,10 +128,10 @@ export async function POST(req: Request) {
       currentChatId = newChat.id;
     }
 
-    console.log("[API] Processing message for chat:", currentChatId);
+    console.log("[API] Processing message for chat:", currentChatId, "User:", userId);
 
     // Initialize or get user profile
-    const userProfile = await getOrCreateUserProfile(DEFAULT_USER_ID);
+    const userProfile = await getOrCreateUserProfile(userId);
     console.log("[API] User profile loaded:", {
       level: userProfile.level,
       hasGoal: !!userProfile.learningGoal,
@@ -145,8 +175,9 @@ export async function POST(req: Request) {
         : [],
       messageCount: langchainMessages.length,
       chatId: currentChatId,
-      userId: DEFAULT_USER_ID,
+      userId: userId,
       correctionResult: null,
+      diaryContext,
     };
 
     // Invoke graph
@@ -184,11 +215,26 @@ export async function POST(req: Request) {
       console.error("[DB Error] Failed to save messages:", error);
     }
 
+    // Increment usage and update streak for authenticated users
+    if (isAuthenticated) {
+      try {
+        const newCount = await incrementUsage(userId);
+        console.log(`[API] Usage incremented for user ${userId}: ${newCount}`);
+
+        // Record diary entry and update streak
+        const streakInfo = await recordDiaryEntry(userId);
+        console.log(`[API] Streak updated for user ${userId}: ${streakInfo.currentStreak} days`);
+      } catch (error) {
+        console.error("[API] Failed to update usage/streak:", error);
+        // Don't fail the request if tracking fails
+      }
+    }
+
     // Save mistake pattern to database if detected
     if (correctionResult?.mistakeType && correctionResult?.mistakePattern) {
       try {
         await saveOrUpdateMistake(
-          DEFAULT_USER_ID,
+          userId,
           correctionResult.mistakeType,
           correctionResult.mistakePattern,
           correctionResult.originalText || ""
@@ -199,7 +245,7 @@ export async function POST(req: Request) {
 
         // Check for recurring patterns and generate insight
         const recurringMistake = await checkRecurringPattern(
-          DEFAULT_USER_ID,
+          userId,
           correctionResult.mistakePattern
         );
 
