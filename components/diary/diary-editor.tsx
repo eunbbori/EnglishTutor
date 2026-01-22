@@ -2,93 +2,210 @@
 
 import { useState, KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { Lightbulb, Send, Loader2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Sparkles, Send, Loader2, ChevronDown, X, Pencil } from "lucide-react";
+
+export interface DiaryPrompt {
+  id: string;
+  title: string;
+  placeholder: string;
+}
 
 interface DiaryEditorProps {
-  todayPrompt: string;
-  onSubmit: (text: string) => void;
+  prompts: DiaryPrompt[];
+  defaultPromptId?: string;
+  onSubmit: (text: string, promptId: string | null) => void;
   isLoading?: boolean;
 }
 
-export function DiaryEditor({ todayPrompt, onSubmit, isLoading = false }: DiaryEditorProps) {
+export function DiaryEditor({
+  prompts,
+  defaultPromptId,
+  onSubmit,
+  isLoading = false,
+}: DiaryEditorProps) {
   const [text, setText] = useState("");
+  const [selectedPrompt, setSelectedPrompt] = useState<DiaryPrompt | null>(
+    prompts.find((p) => p.id === defaultPromptId) || prompts[0] || null
+  );
 
   const handleSubmit = () => {
     if (!text.trim() || isLoading) return;
-    onSubmit(text);
+    onSubmit(text, selectedPrompt?.id || null);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    // Cmd/Ctrl + Enter to submit
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       handleSubmit();
     }
   };
 
-  // Get today's date in Korean format
+  const clearPrompt = () => {
+    setSelectedPrompt(null);
+  };
+
+  // Get today's date
   const today = new Date();
-  const dateString = today.toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    weekday: "long",
-  });
+  const month = today.toLocaleDateString("en-US", { month: "short" });
+  const day = today.getDate();
+  const weekday = today.toLocaleDateString("ko-KR", { weekday: "long" });
+  const year = today.getFullYear();
+
+  // Free writing placeholder
+  const freePlaceholder = "Write freely about anything on your mind today...";
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      {/* Date Header */}
-      <div className="text-center mb-6">
-        <p className="text-2xl font-semibold text-foreground">{dateString}</p>
-        <p className="text-sm text-muted-foreground mt-1">오늘의 일기</p>
-      </div>
-
-      {/* Today's Prompt Card */}
-      <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-6">
-        <div className="flex items-start gap-3">
-          <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-full">
-            <Lightbulb className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+    <div className="w-full max-w-2xl mx-auto px-4">
+      {/* Diary Header - Date Stamp Style */}
+      <div className="flex items-center justify-center mb-8">
+        <div className="relative">
+          {/* Date stamp */}
+          <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 border-2 border-amber-200/60 dark:border-amber-800/60 rounded-2xl px-8 py-4 shadow-sm">
+            <div className="text-center">
+              <p className="text-xs uppercase tracking-widest text-amber-600 dark:text-amber-400 font-medium">
+                {month} {year}
+              </p>
+              <p className="text-5xl font-light text-amber-800 dark:text-amber-200 my-1">
+                {day}
+              </p>
+              <p className="text-sm text-amber-700 dark:text-amber-300">
+                {weekday}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-medium text-amber-800 dark:text-amber-300 mb-1">
-              오늘의 주제
-            </p>
-            <p className="text-amber-900 dark:text-amber-100">{todayPrompt}</p>
-          </div>
+          {/* Decorative pin */}
+          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-red-400 dark:bg-red-500 rounded-full shadow-md border-2 border-red-300 dark:border-red-400" />
         </div>
       </div>
 
-      {/* Diary Editor */}
+      {/* Topic Selector */}
+      <div className="mb-6">
+        {selectedPrompt ? (
+          <div className="bg-gradient-to-r from-amber-50/80 to-orange-50/80 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200/50 dark:border-amber-800/50 rounded-xl p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 flex-1">
+                <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-lg">
+                  <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                      오늘의 주제
+                    </span>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="text-xs text-amber-600 dark:text-amber-500 hover:text-amber-800 dark:hover:text-amber-300 flex items-center gap-0.5 transition-colors">
+                          변경 <ChevronDown className="h-3 w-3" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-56">
+                        {prompts.map((prompt) => (
+                          <DropdownMenuItem
+                            key={prompt.id}
+                            onClick={() => setSelectedPrompt(prompt)}
+                            className={selectedPrompt?.id === prompt.id ? "bg-accent" : ""}
+                          >
+                            {prompt.title}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  <p className="text-amber-900 dark:text-amber-100 font-medium">
+                    {selectedPrompt.title}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={clearPrompt}
+                className="p-1.5 text-amber-500 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 rounded-lg transition-colors"
+                title="자유 주제로 변경"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-sm text-muted-foreground">자유롭게 쓰기</span>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="text-sm text-primary hover:text-primary/80 flex items-center gap-1 transition-colors">
+                  주제 선택하기 <ChevronDown className="h-3 w-3" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="w-56">
+                {prompts.map((prompt) => (
+                  <DropdownMenuItem
+                    key={prompt.id}
+                    onClick={() => setSelectedPrompt(prompt)}
+                  >
+                    {prompt.title}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
+      </div>
+
+      {/* Diary Paper */}
       <div className="relative">
-        <div className="bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-700 rounded-xl shadow-sm overflow-hidden">
-          {/* Notebook lines effect */}
+        {/* Paper background */}
+        <div
+          className="bg-[#fffef9] dark:bg-[#1c1917] rounded-2xl shadow-lg overflow-hidden"
+          style={{
+            boxShadow: "0 4px 24px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
+          }}
+        >
+          {/* Red margin line */}
+          <div className="absolute left-12 top-0 bottom-0 w-[1px] bg-red-200/60 dark:bg-red-900/40" />
+
+          {/* Notebook lines */}
           <div
-            className="absolute inset-0 pointer-events-none opacity-30 dark:opacity-20"
+            className="absolute inset-0 pointer-events-none"
             style={{
-              backgroundImage: "repeating-linear-gradient(transparent, transparent 31px, #e5e5e5 31px, #e5e5e5 32px)",
-              backgroundPosition: "0 16px",
+              backgroundImage:
+                "repeating-linear-gradient(transparent, transparent 31px, #e8e4d9 31px, #e8e4d9 32px)",
+              backgroundPosition: "0 20px",
             }}
           />
+
+          {/* Hole punches decoration */}
+          <div className="absolute left-3 top-8 w-3 h-3 rounded-full bg-zinc-200 dark:bg-zinc-700 shadow-inner" />
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-zinc-200 dark:bg-zinc-700 shadow-inner" />
+          <div className="absolute left-3 bottom-8 w-3 h-3 rounded-full bg-zinc-200 dark:bg-zinc-700 shadow-inner" />
 
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Write your diary in English... (영어로 오늘 하루를 적어보세요)"
-            className="w-full min-h-[280px] p-6 text-lg leading-8 resize-none bg-transparent relative z-10 focus:outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+            placeholder={selectedPrompt?.placeholder || freePlaceholder}
+            className="w-full min-h-[320px] pl-16 pr-6 py-5 text-lg leading-8 resize-none bg-transparent relative z-10 focus:outline-none placeholder:text-zinc-400/70 dark:placeholder:text-zinc-600 text-zinc-800 dark:text-zinc-200"
+            style={{
+              fontFamily: "'Georgia', 'Noto Serif KR', serif",
+              lineHeight: "32px",
+            }}
             disabled={isLoading}
           />
         </div>
 
-        {/* Character count */}
-        <div className="flex justify-between items-center mt-3">
-          <p className="text-sm text-muted-foreground">
-            {text.length > 0 ? `${text.length}자` : ""}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            ⌘ + Enter로 제출
-          </p>
-        </div>
+        {/* Paper edge shadow */}
+        <div className="absolute -bottom-1 left-2 right-2 h-2 bg-gradient-to-b from-zinc-100/50 to-transparent dark:from-zinc-800/30 rounded-b-xl" />
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-between items-center mt-4 px-1">
+        <p className="text-sm text-muted-foreground">
+          {text.length > 0 && <span>{text.length}자</span>}
+        </p>
+        <p className="text-xs text-muted-foreground">⌘ + Enter</p>
       </div>
 
       {/* Submit Button */}
@@ -97,7 +214,7 @@ export function DiaryEditor({ todayPrompt, onSubmit, isLoading = false }: DiaryE
           onClick={handleSubmit}
           disabled={!text.trim() || isLoading}
           size="lg"
-          className="px-8 gap-2"
+          className="px-10 gap-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/25"
         >
           {isLoading ? (
             <>
@@ -106,16 +223,16 @@ export function DiaryEditor({ todayPrompt, onSubmit, isLoading = false }: DiaryE
             </>
           ) : (
             <>
-              <Send className="h-4 w-4" />
+              <Pencil className="h-4 w-4" />
               교정받기
             </>
           )}
         </Button>
       </div>
 
-      {/* Helper Text */}
-      <p className="text-center text-sm text-muted-foreground mt-4">
-        틀려도 괜찮아요! AI가 자연스러운 표현으로 고쳐줄 거예요 ✨
+      {/* Encouragement */}
+      <p className="text-center text-sm text-muted-foreground mt-5">
+        틀려도 괜찮아요! 매일 쓰는 게 중요해요 ✨
       </p>
     </div>
   );
