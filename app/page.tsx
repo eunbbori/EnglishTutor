@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { LoginButton } from "@/components/auth/login-button";
 import { UsageCounter } from "@/components/usage/usage-counter";
 import { UpgradeModal } from "@/components/payment/upgrade-modal";
-import { DiaryEditor } from "@/components/diary/diary-editor";
+import { DiaryEditor, DiaryPrompt } from "@/components/diary/diary-editor";
 import { CorrectionResult } from "@/components/diary/correction-result";
 import { Toaster } from "@/components/ui/toaster";
 import { Badge } from "@/components/ui/badge";
@@ -30,27 +30,67 @@ interface CorrectionData {
   insight?: string;
 }
 
-// 오늘의 주제 목록
-const DAILY_PROMPTS = [
-  "오늘 하루 어땠나요?",
-  "오늘 먹은 음식 중 가장 맛있었던 것은?",
-  "오늘 가장 기억에 남는 순간은?",
-  "주말에 뭘 하고 싶나요?",
-  "요즘 빠져있는 취미가 있나요?",
-  "오늘 새로 배운 것이 있나요?",
-  "최근에 본 영화나 드라마는?",
-  "오늘 감사한 일 세 가지는?",
-  "내일 가장 기대되는 일은?",
-  "요즘 고민이 있다면?",
+// 오늘의 주제 목록 (id, title, placeholder)
+const DIARY_PROMPTS: DiaryPrompt[] = [
+  {
+    id: "how-was-day",
+    title: "오늘 하루 어땠나요?",
+    placeholder: "How was your day? Write about what happened today...",
+  },
+  {
+    id: "food",
+    title: "오늘 먹은 음식 중 가장 맛있었던 것은?",
+    placeholder: "What delicious food did you eat today? Describe the taste and how you felt...",
+  },
+  {
+    id: "memorable-moment",
+    title: "오늘 가장 기억에 남는 순간은?",
+    placeholder: "What was the most memorable moment of your day? Why was it special?",
+  },
+  {
+    id: "weekend-plans",
+    title: "주말에 뭘 하고 싶나요?",
+    placeholder: "What do you want to do this weekend? Share your plans or wishes...",
+  },
+  {
+    id: "hobby",
+    title: "요즘 빠져있는 취미가 있나요?",
+    placeholder: "What hobby are you into these days? Why do you enjoy it?",
+  },
+  {
+    id: "learned-today",
+    title: "오늘 새로 배운 것이 있나요?",
+    placeholder: "Did you learn something new today? What was it about?",
+  },
+  {
+    id: "movie-drama",
+    title: "최근에 본 영화나 드라마는?",
+    placeholder: "What movie or drama did you watch recently? How was it?",
+  },
+  {
+    id: "grateful",
+    title: "오늘 감사한 일 세 가지는?",
+    placeholder: "What are three things you're grateful for today? Think about the small moments...",
+  },
+  {
+    id: "tomorrow",
+    title: "내일 가장 기대되는 일은?",
+    placeholder: "What are you looking forward to tomorrow? Why does it excite you?",
+  },
+  {
+    id: "worry",
+    title: "요즘 고민이 있다면?",
+    placeholder: "Is there something on your mind lately? Feel free to share your thoughts...",
+  },
 ];
 
-// 오늘 날짜 기반으로 주제 선택
-function getTodayPrompt(): string {
+// 오늘 날짜 기반으로 기본 주제 ID 선택
+function getTodayPromptId(): string {
   const today = new Date();
   const dayOfYear = Math.floor(
     (today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000
   );
-  return DAILY_PROMPTS[dayOfYear % DAILY_PROMPTS.length];
+  return DIARY_PROMPTS[dayOfYear % DIARY_PROMPTS.length].id;
 }
 
 type ViewMode = "write" | "result";
@@ -63,7 +103,7 @@ export default function Home() {
   const [usageStatus, setUsageStatus] = useState<UsageStatus | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [streak, setStreak] = useState(0);
-  const [todayPrompt] = useState(getTodayPrompt());
+  const [defaultPromptId] = useState(getTodayPromptId());
   const [correctionData, setCorrectionData] = useState<CorrectionData | null>(null);
 
   // Fetch usage status
@@ -104,7 +144,7 @@ export default function Home() {
     fetchStreak();
   }, [fetchStreak]);
 
-  const handleSubmit = async (userMessage: string) => {
+  const handleSubmit = async (userMessage: string, promptId: string | null) => {
     setIsLoading(true);
 
     try {
@@ -118,6 +158,7 @@ export default function Home() {
           messages: [{ role: "user", content: userMessage }],
           chatId,
           mode: "diary",
+          promptId, // 선택된 주제 ID 전달
         }),
       });
 
@@ -171,19 +212,19 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col">
+    <main className="flex min-h-screen flex-col bg-gradient-to-b from-amber-50/30 to-background dark:from-amber-950/10">
       {/* Header */}
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <PenLine className="h-5 w-5 text-primary" />
+              <PenLine className="h-5 w-5 text-amber-600" />
               <h1 className="text-lg font-bold">Daily English</h1>
             </div>
             <div className="flex items-center gap-3">
               {/* Streak Badge */}
               {streak > 0 && (
-                <Badge variant="secondary" className="gap-1">
+                <Badge variant="secondary" className="gap-1 bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200">
                   <Flame className="h-3 w-3 text-orange-500" />
                   {streak}일
                 </Badge>
@@ -214,7 +255,8 @@ export default function Home() {
       <div className="flex-1 flex items-center justify-center px-4 py-8 md:py-12">
         {viewMode === "write" ? (
           <DiaryEditor
-            todayPrompt={todayPrompt}
+            prompts={DIARY_PROMPTS}
+            defaultPromptId={defaultPromptId}
             onSubmit={handleSubmit}
             isLoading={isLoading}
           />
