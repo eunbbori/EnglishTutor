@@ -293,6 +293,7 @@ export default function Home() {
           <CorrectionResult
             data={correctionData}
             onNewEntry={handleNewEntry}
+            chatId={chatId || undefined}
           />
         ) : null}
       </div>

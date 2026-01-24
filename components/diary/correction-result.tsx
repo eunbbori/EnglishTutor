@@ -12,6 +12,7 @@ import {
   Sparkles,
   BookOpen,
 } from "lucide-react";
+import { SelectableText } from "@/components/vocabulary/selectable-text";
 
 interface Alternative {
   type: string;
@@ -30,9 +31,10 @@ interface CorrectionData {
 interface CorrectionResultProps {
   data: CorrectionData;
   onNewEntry: () => void;
+  chatId?: string;
 }
 
-export function CorrectionResult({ data, onNewEntry }: CorrectionResultProps) {
+export function CorrectionResult({ data, onNewEntry, chatId }: CorrectionResultProps) {
   const {
     originalText,
     correctedText,
@@ -97,9 +99,11 @@ export function CorrectionResult({ data, onNewEntry }: CorrectionResultProps) {
                 </Badge>
               )}
             </div>
-            <p className="text-lg leading-relaxed text-green-900 dark:text-green-100">
-              {correctedText}
-            </p>
+            <SelectableText sourceType="diary" sourceId={chatId}>
+              <p className="text-lg leading-relaxed text-green-900 dark:text-green-100">
+                {correctedText}
+              </p>
+            </SelectableText>
           </div>
         </CardContent>
       </Card>
@@ -159,7 +163,9 @@ export function CorrectionResult({ data, onNewEntry }: CorrectionResultProps) {
                   <Badge variant="outline" className="shrink-0 mt-0.5">
                     {alt.type}
                   </Badge>
-                  <p className="text-sm leading-relaxed">{alt.text}</p>
+                  <SelectableText sourceType="diary" sourceId={chatId} className="flex-1">
+                    <p className="text-sm leading-relaxed">{alt.text}</p>
+                  </SelectableText>
                 </div>
               ))}
             </div>

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Calendar, CheckCircle2, Lightbulb, RefreshCw, ArrowRight, ArrowRightLeft } from "lucide-react";
+import { SelectableText } from "@/components/vocabulary/selectable-text";
 
 interface DiaryEntryDetail {
   id: string;
@@ -164,9 +165,11 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
             <h2 className="text-sm font-medium text-muted-foreground">교정된 문장</h2>
           </div>
           <div className="bg-green-50/50 dark:bg-green-950/20 rounded-xl p-5 border border-green-200/50 dark:border-green-900/30 shadow-sm">
-            <p className="text-lg leading-8 text-green-900 dark:text-green-100" style={{ fontFamily: "'Georgia', serif" }}>
-              {entry.correctedText}
-            </p>
+            <SelectableText sourceType="diary" sourceId={entry.chatId}>
+              <p className="text-lg leading-8 text-green-900 dark:text-green-100" style={{ fontFamily: "'Georgia', serif" }}>
+                {entry.correctedText}
+              </p>
+            </SelectableText>
           </div>
         </section>
 
@@ -201,9 +204,11 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
                   <Badge variant="secondary" className="mb-2 text-xs">
                     {alt.type}
                   </Badge>
-                  <p className="text-base text-zinc-700 dark:text-zinc-300" style={{ fontFamily: "'Georgia', serif" }}>
-                    {alt.text}
-                  </p>
+                  <SelectableText sourceType="diary" sourceId={entry.chatId}>
+                    <p className="text-base text-zinc-700 dark:text-zinc-300" style={{ fontFamily: "'Georgia', serif" }}>
+                      {alt.text}
+                    </p>
+                  </SelectableText>
                 </div>
               ))}
             </div>
