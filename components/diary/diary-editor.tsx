@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sparkles, Send, Loader2, ChevronDown, X, Pencil } from "lucide-react";
+import { MoodSelector } from "@/components/calendar/mood-selector";
 
 export interface DiaryPrompt {
   id: string;
@@ -19,7 +20,7 @@ export interface DiaryPrompt {
 interface DiaryEditorProps {
   prompts: DiaryPrompt[];
   defaultPromptId?: string;
-  onSubmit: (text: string, promptId: string | null) => void;
+  onSubmit: (text: string, promptId: string | null, mood: string | null) => void;
   isLoading?: boolean;
 }
 
@@ -30,13 +31,14 @@ export function DiaryEditor({
   isLoading = false,
 }: DiaryEditorProps) {
   const [text, setText] = useState("");
+  const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [selectedPrompt, setSelectedPrompt] = useState<DiaryPrompt | null>(
     prompts.find((p) => p.id === defaultPromptId) || prompts[0] || null
   );
 
   const handleSubmit = () => {
     if (!text.trim() || isLoading) return;
-    onSubmit(text, selectedPrompt?.id || null);
+    onSubmit(text, selectedPrompt?.id || null, selectedMood);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -82,6 +84,15 @@ export function DiaryEditor({
           {/* Decorative pin */}
           <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-red-400 dark:bg-red-500 rounded-full shadow-md border-2 border-red-300 dark:border-red-400" />
         </div>
+      </div>
+
+      {/* Mood Selector */}
+      <div className="mb-6 flex justify-center">
+        <MoodSelector
+          selectedMood={selectedMood}
+          onSelect={setSelectedMood}
+          disabled={isLoading}
+        />
       </div>
 
       {/* Topic Selector */}

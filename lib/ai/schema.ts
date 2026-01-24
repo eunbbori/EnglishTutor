@@ -30,6 +30,11 @@ export const correctionSchema = z.object({
     .string()
     .optional()
     .describe("Optional insight message for recurring mistakes (3+ occurrences in 7 days). Provides a brief rule summary and encouragement in Korean."),
+  keywords: z
+    .array(z.string())
+    .max(3)
+    .optional()
+    .describe("1-3 keywords extracted from the diary entry that represent main topics (e.g., 'work', 'food', 'family'). Keep keywords short and in English."),
 });
 
 export type AlternativeExpression = z.infer<typeof alternativeSchema>;

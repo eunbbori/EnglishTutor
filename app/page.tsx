@@ -7,9 +7,10 @@ import { UsageCounter } from "@/components/usage/usage-counter";
 import { UpgradeModal } from "@/components/payment/upgrade-modal";
 import { DiaryEditor, DiaryPrompt } from "@/components/diary/diary-editor";
 import { CorrectionResult } from "@/components/diary/correction-result";
+import { CalendarView } from "@/components/calendar/calendar-view";
 import { Toaster } from "@/components/ui/toaster";
 import { Badge } from "@/components/ui/badge";
-import { PenLine, Flame, History } from "lucide-react";
+import { PenLine, Flame, History, Calendar } from "lucide-react";
 import Link from "next/link";
 
 interface UsageStatus {
@@ -28,6 +29,8 @@ interface CorrectionData {
   alternatives: Array<{ type: string; text: string }>;
   mistakeType?: string | null;
   insight?: string;
+  keywords?: string[];
+  mood?: string;
 }
 
 // 오늘의 주제 목록 (id, title, placeholder)
@@ -93,11 +96,11 @@ function getTodayPromptId(): string {
   return DIARY_PROMPTS[dayOfYear % DIARY_PROMPTS.length].id;
 }
 
-type ViewMode = "write" | "result";
+type ViewMode = "calendar" | "write" | "result";
 
 export default function Home() {
   const { data: session, status } = useSession();
-  const [viewMode, setViewMode] = useState<ViewMode>("write");
+  const [viewMode, setViewMode] = useState<ViewMode>("calendar");
   const [isLoading, setIsLoading] = useState(false);
   const [chatId, setChatId] = useState<string | null>(null);
   const [usageStatus, setUsageStatus] = useState<UsageStatus | null>(null);
@@ -144,7 +147,7 @@ export default function Home() {
     fetchStreak();
   }, [fetchStreak]);
 
-  const handleSubmit = async (userMessage: string, promptId: string | null) => {
+  const handleSubmit = async (userMessage: string, promptId: string | null, mood: string | null) => {
     setIsLoading(true);
 
     try {
@@ -159,6 +162,7 @@ export default function Home() {
           chatId,
           mode: "diary",
           promptId, // 선택된 주제 ID 전달
+          mood, // 선택된 감정 전달
         }),
       });
 
@@ -208,6 +212,10 @@ export default function Home() {
   const handleNewEntry = () => {
     setCorrectionData(null);
     setChatId(null);
+    setViewMode("calendar");
+  };
+
+  const handleWriteToday = () => {
     setViewMode("write");
   };
 
@@ -228,6 +236,25 @@ export default function Home() {
                   <Flame className="h-3 w-3 text-orange-500" />
                   {streak}일
                 </Badge>
+              )}
+              {/* Calendar/Write Toggle */}
+              {viewMode !== "result" && (
+                <button
+                  onClick={() => setViewMode(viewMode === "calendar" ? "write" : "calendar")}
+                  className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {viewMode === "calendar" ? (
+                    <>
+                      <PenLine className="h-4 w-4" />
+                      <span className="hidden sm:inline">쓰기</span>
+                    </>
+                  ) : (
+                    <>
+                      <Calendar className="h-4 w-4" />
+                      <span className="hidden sm:inline">달력</span>
+                    </>
+                  )}
+                </button>
               )}
               {/* History Link */}
               {session?.user && (
@@ -253,7 +280,9 @@ export default function Home() {
 
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center px-4 py-8 md:py-12">
-        {viewMode === "write" ? (
+        {viewMode === "calendar" ? (
+          <CalendarView onWriteToday={handleWriteToday} />
+        ) : viewMode === "write" ? (
           <DiaryEditor
             prompts={DIARY_PROMPTS}
             defaultPromptId={defaultPromptId}

@@ -100,7 +100,7 @@ export async function POST(req: Request) {
       }
     }
 
-    const { messages: userMessages, chatId, mode } = await req.json();
+    const { messages: userMessages, chatId, mode, mood } = await req.json();
 
     // Diary context (simplified from business context)
     const diaryContext = { mode: mode || "diary" };
@@ -203,11 +203,14 @@ export async function POST(req: Request) {
         content: lastUserMessage.content,
       });
 
-      // Save assistant message (as JSON string)
+      // Save assistant message (as JSON string) with mood if provided
+      const assistantContent = mood
+        ? { ...correctionResult, mood }
+        : correctionResult;
       await db.insert(messages).values({
         chatId: currentChatId,
         role: "assistant",
-        content: JSON.stringify(correctionResult),
+        content: JSON.stringify(assistantContent),
       });
 
       console.log("[API] Messages saved to database");
@@ -265,9 +268,12 @@ export async function POST(req: Request) {
       }
     }
 
-    // Return the correction result
+    // Return the correction result (include mood if provided)
+    const responseObject = mood
+      ? { ...correctionResult, mood }
+      : correctionResult;
     return Response.json(
-      { object: correctionResult },
+      { object: responseObject },
       {
         headers: {
           "X-Chat-Id": currentChatId,

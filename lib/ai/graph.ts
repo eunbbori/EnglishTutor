@@ -101,6 +101,7 @@ IMPORTANT: Respond with a JSON object with these EXACT fields:
 - alternatives: Array of exactly 3 objects, each with:
   * type: "Casual", "Expressive", or "Simple"
   * text: Alternative ways to express the same idea
+- keywords: Array of 1-3 English keywords that represent the main topics of the diary entry (e.g., ["work", "coffee", "tired"]). Keep keywords short and simple.
 - mistakeType: Classify the mistake in format "category:subcategory". REQUIRED field.
   * Grammar errors:
     - "grammar:tense" (wrong tense, especially past tense)
