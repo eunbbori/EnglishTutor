@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, KeyboardEvent } from "react";
+import { useState, KeyboardEvent, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -8,8 +8,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sparkles, Send, Loader2, ChevronDown, X, Pencil } from "lucide-react";
+import { Sparkles, Send, Loader2, ChevronDown, X, Pencil, RotateCw } from "lucide-react";
 import { MoodSelector } from "@/components/calendar/mood-selector";
+import { ModeSelector, DiaryMode } from "./mode-selector";
+import { DailyMission } from "./daily-mission";
+import { getTodayWord, checkWordUsage } from "@/lib/missions";
 
 export interface DiaryPrompt {
   id: string;
@@ -24,6 +27,14 @@ interface DiaryEditorProps {
   isLoading?: boolean;
 }
 
+const SHUFFLE_LIMIT = 3;
+const STORAGE_KEY = "diary_shuffle_data";
+
+interface ShuffleData {
+  date: string;
+  count: number;
+}
+
 export function DiaryEditor({
   prompts,
   defaultPromptId,
@@ -35,6 +46,43 @@ export function DiaryEditor({
   const [selectedPrompt, setSelectedPrompt] = useState<DiaryPrompt | null>(
     prompts.find((p) => p.id === defaultPromptId) || prompts[0] || null
   );
+  const [shuffleCount, setShuffleCount] = useState(0);
+  const [isShuffling, setIsShuffling] = useState(false);
+  const [mode, setMode] = useState<DiaryMode>("free");
+
+  // Get today's word for challenge mode
+  const todayWord = getTodayWord();
+  const wordUsed = mode === "challenge" ? checkWordUsage(text, todayWord.word) : false;
+
+  // Load shuffle count from localStorage on mount
+  useEffect(() => {
+    const today = new Date().toDateString();
+    const stored = localStorage.getItem(STORAGE_KEY);
+
+    if (stored) {
+      try {
+        const data: ShuffleData = JSON.parse(stored);
+        if (data.date === today) {
+          setShuffleCount(data.count);
+        } else {
+          // New day, reset count
+          const newData: ShuffleData = { date: today, count: 0 };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+          setShuffleCount(0);
+        }
+      } catch {
+        // Invalid data, reset
+        const newData: ShuffleData = { date: today, count: 0 };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+        setShuffleCount(0);
+      }
+    } else {
+      // No data, initialize
+      const newData: ShuffleData = { date: today, count: 0 };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+      setShuffleCount(0);
+    }
+  }, []);
 
   const handleSubmit = () => {
     if (!text.trim() || isLoading) return;
@@ -52,6 +100,30 @@ export function DiaryEditor({
     setSelectedPrompt(null);
   };
 
+  const shufflePrompt = () => {
+    if (shuffleCount >= SHUFFLE_LIMIT || !selectedPrompt) return;
+
+    setIsShuffling(true);
+
+    // Get a random prompt different from current one
+    const availablePrompts = prompts.filter((p) => p.id !== selectedPrompt.id);
+    const randomPrompt = availablePrompts[Math.floor(Math.random() * availablePrompts.length)];
+
+    // Animate and update
+    setTimeout(() => {
+      setSelectedPrompt(randomPrompt);
+      setIsShuffling(false);
+
+      // Update shuffle count
+      const newCount = shuffleCount + 1;
+      setShuffleCount(newCount);
+
+      const today = new Date().toDateString();
+      const newData: ShuffleData = { date: today, count: newCount };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+    }, 300);
+  };
+
   // Get today's date
   const today = new Date();
   const month = today.toLocaleDateString("en-US", { month: "short" });
@@ -59,8 +131,13 @@ export function DiaryEditor({
   const weekday = today.toLocaleDateString("ko-KR", { weekday: "long" });
   const year = today.getFullYear();
 
-  // Free writing placeholder
-  const freePlaceholder = "Write freely about anything on your mind today...";
+  // Placeholder text based on mode
+  const getPlaceholder = () => {
+    if (mode === "challenge") {
+      return `Try to use the word "${todayWord.word}" in your writing today...`;
+    }
+    return selectedPrompt?.placeholder || "Write freely about anything on your mind today...";
+  };
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4">
@@ -86,6 +163,11 @@ export function DiaryEditor({
         </div>
       </div>
 
+      {/* Mode Selector */}
+      <div className="mb-6">
+        <ModeSelector mode={mode} onModeChange={setMode} disabled={isLoading} />
+      </div>
+
       {/* Mood Selector */}
       <div className="mb-6 flex justify-center">
         <MoodSelector
@@ -95,8 +177,13 @@ export function DiaryEditor({
         />
       </div>
 
-      {/* Topic Selector */}
-      <div className="mb-6">
+      {/* Daily Mission (Challenge Mode) */}
+      {mode === "challenge" && (
+        <DailyMission word={todayWord} isCompleted={wordUsed} />
+      )}
+
+      {/* Topic Selector (Free Mode only) */}
+      {mode === "free" && <div className="mb-6">
         {selectedPrompt ? (
           <div className="bg-gradient-to-r from-amber-50/80 to-orange-50/80 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200/50 dark:border-amber-800/50 rounded-xl p-4">
             <div className="flex items-start justify-between gap-3">
@@ -105,30 +192,46 @@ export function DiaryEditor({
                   <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
                       오늘의 주제
                     </span>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="text-xs text-amber-600 dark:text-amber-500 hover:text-amber-800 dark:hover:text-amber-300 flex items-center gap-0.5 transition-colors">
-                          변경 <ChevronDown className="h-3 w-3" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-56">
-                        {prompts.map((prompt) => (
-                          <DropdownMenuItem
-                            key={prompt.id}
-                            onClick={() => setSelectedPrompt(prompt)}
-                            className={selectedPrompt?.id === prompt.id ? "bg-accent" : ""}
-                          >
-                            {prompt.title}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex items-center gap-1.5">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="text-xs text-amber-600 dark:text-amber-500 hover:text-amber-800 dark:hover:text-amber-300 flex items-center gap-0.5 transition-colors">
+                            변경 <ChevronDown className="h-3 w-3" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-56">
+                          {prompts.map((prompt) => (
+                            <DropdownMenuItem
+                              key={prompt.id}
+                              onClick={() => setSelectedPrompt(prompt)}
+                              className={selectedPrompt?.id === prompt.id ? "bg-accent" : ""}
+                            >
+                              {prompt.title}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      <span className="text-amber-300 dark:text-amber-700">•</span>
+                      <button
+                        onClick={shufflePrompt}
+                        disabled={shuffleCount >= SHUFFLE_LIMIT || isShuffling}
+                        className="text-xs text-amber-600 dark:text-amber-500 hover:text-amber-800 dark:hover:text-amber-300 flex items-center gap-0.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        title={
+                          shuffleCount >= SHUFFLE_LIMIT
+                            ? "오늘의 셔플 기회를 모두 사용했어요"
+                            : `랜덤 주제로 바꾸기 (${SHUFFLE_LIMIT - shuffleCount}회 남음)`
+                        }
+                      >
+                        <RotateCw className={`h-3 w-3 ${isShuffling ? "animate-spin" : ""}`} />
+                        셔플 {shuffleCount >= SHUFFLE_LIMIT ? "" : `(${SHUFFLE_LIMIT - shuffleCount})`}
+                      </button>
+                    </div>
                   </div>
-                  <p className="text-amber-900 dark:text-amber-100 font-medium">
+                  <p className={`text-amber-900 dark:text-amber-100 font-medium transition-opacity ${isShuffling ? "opacity-50" : "opacity-100"}`}>
                     {selectedPrompt.title}
                   </p>
                 </div>
@@ -165,6 +268,7 @@ export function DiaryEditor({
           </div>
         )}
       </div>
+      )}
 
       {/* Diary Paper */}
       <div className="relative">
@@ -197,7 +301,7 @@ export function DiaryEditor({
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={selectedPrompt?.placeholder || freePlaceholder}
+            placeholder={getPlaceholder()}
             className="w-full min-h-[320px] pl-16 pr-6 py-5 text-lg leading-8 resize-none bg-transparent relative z-10 focus:outline-none placeholder:text-zinc-400/70 dark:placeholder:text-zinc-600 text-zinc-800 dark:text-zinc-200"
             style={{
               fontFamily: "'Georgia', 'Noto Serif KR', serif",
