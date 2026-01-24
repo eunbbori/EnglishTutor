@@ -157,7 +157,7 @@ export function DiaryEditor({
   // Placeholder text based on mode
   const getPlaceholder = () => {
     if (mode === "challenge") {
-      return `Try to use the word "${todayWord.word}" in your diary today. Write about the topic above...`;
+      return `Try to use the word "${todayWord.word}" naturally in your writing. Write about anything you want...`;
     }
     // Free mode - always show inspiration hint placeholder
     return selectedPrompt?.placeholder || "How was your day? Write about what happened today...";
@@ -203,46 +203,7 @@ export function DiaryEditor({
 
       {/* Daily Mission (Challenge Mode) */}
       {mode === "challenge" && (
-        <>
-          <DailyMission word={todayWord} isCompleted={wordUsed} />
-
-          {/* Today's Topic (Fixed + Shuffle) */}
-          <div className="mb-6">
-            <div className="bg-gradient-to-r from-amber-50/80 to-orange-50/80 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200/50 dark:border-amber-800/50 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-lg">
-                  <Sparkles className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
-                      📝 오늘의 주제
-                    </span>
-                    <button
-                      onClick={shufflePrompt}
-                      disabled={shuffleCount >= SHUFFLE_LIMIT || isShuffling}
-                      className="text-xs text-amber-600 dark:text-amber-500 hover:text-amber-800 dark:hover:text-amber-300 flex items-center gap-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                      title={
-                        shuffleCount >= SHUFFLE_LIMIT
-                          ? "오늘의 셔플 기회를 모두 사용했어요"
-                          : `다시 뽑기 (${SHUFFLE_LIMIT - shuffleCount}회 남음)`
-                      }
-                    >
-                      <RotateCw className={`h-3 w-3 ${isShuffling ? "animate-spin" : ""}`} />
-                      셔플 {shuffleCount >= SHUFFLE_LIMIT ? "불가" : `(${SHUFFLE_LIMIT - shuffleCount})`}
-                    </button>
-                  </div>
-                  <p className={`text-amber-900 dark:text-amber-100 font-medium transition-opacity ${isShuffling ? "opacity-50" : "opacity-100"}`}>
-                    {selectedPrompt?.title || "오늘 하루 어땠나요?"}
-                  </p>
-                  <p className="text-xs text-amber-600/70 dark:text-amber-400/70 mt-2">
-                    * 셔플은 하루에 {SHUFFLE_LIMIT}회만 가능합니다
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
+        <DailyMission word={todayWord} isCompleted={wordUsed} />
       )}
 
       {/* Inspiration Hint (Free Mode only) */}
