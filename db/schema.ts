@@ -213,3 +213,24 @@ export const learningStats = pgTable("learning_stats", {
   dateIdx: index("learning_stats_date_idx").on(table.date),
   userIdDateIdx: index("learning_stats_user_date_idx").on(table.userId, table.date),
 }));
+
+// 8. Vocabulary (Personal Word Bank)
+// Stores user's saved words and phrases for review
+export const vocabulary = pgTable("vocabulary", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  word: text("word").notNull(), // Saved word or phrase
+  meaning: text("meaning"), // Optional meaning/translation
+  example: text("example"), // Optional example sentence
+  memo: text("memo"), // Optional user notes
+  sourceType: text("source_type", { enum: ["diary", "chat", "manual"] }).notNull().default("manual"), // Where this word came from
+  sourceId: uuid("source_id"), // Reference to chat/diary entry (nullable for manual entries)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("vocabulary_user_id_idx").on(table.userId),
+  createdAtIdx: index("vocabulary_created_at_idx").on(table.createdAt),
+  userIdCreatedAtIdx: index("vocabulary_user_created_idx").on(table.userId, table.createdAt),
+}));
