@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sparkles, Send, Loader2, ChevronDown, X, Pencil, RotateCw } from "lucide-react";
+import { Sparkles, Send, Loader2, ChevronDown, X, Pencil, RotateCw, Lightbulb } from "lucide-react";
 import { MoodSelector } from "@/components/calendar/mood-selector";
 import { ModeSelector, DiaryMode } from "./mode-selector";
 import { DailyMission } from "./daily-mission";
@@ -84,6 +84,13 @@ export function DiaryEditor({
     }
   }, []);
 
+  // Ensure selectedPrompt is always set
+  useEffect(() => {
+    if (!selectedPrompt && prompts.length > 0) {
+      setSelectedPrompt(prompts.find((p) => p.id === defaultPromptId) || prompts[0]);
+    }
+  }, [selectedPrompt, prompts, defaultPromptId]);
+
   const handleSubmit = () => {
     if (!text.trim() || isLoading) return;
     onSubmit(text, selectedPrompt?.id || null, selectedMood);
@@ -100,6 +107,22 @@ export function DiaryEditor({
     setSelectedPrompt(null);
   };
 
+  // Free Mode: Change inspiration (unlimited)
+  const changeInspiration = () => {
+    setIsShuffling(true);
+
+    // Get a random prompt different from current one
+    const availablePrompts = prompts.filter((p) => p.id !== selectedPrompt?.id);
+    const randomPrompt = availablePrompts[Math.floor(Math.random() * availablePrompts.length)];
+
+    // Animate and update
+    setTimeout(() => {
+      setSelectedPrompt(randomPrompt);
+      setIsShuffling(false);
+    }, 300);
+  };
+
+  // Challenge Mode: Shuffle prompt (3 times limit)
   const shufflePrompt = () => {
     if (shuffleCount >= SHUFFLE_LIMIT || !selectedPrompt) return;
 
@@ -134,9 +157,10 @@ export function DiaryEditor({
   // Placeholder text based on mode
   const getPlaceholder = () => {
     if (mode === "challenge") {
-      return `Try to use the word "${todayWord.word}" in your writing today...`;
+      return `Try to use the word "${todayWord.word}" in your diary today. Write about the topic above...`;
     }
-    return selectedPrompt?.placeholder || "Write freely about anything on your mind today...";
+    // Free mode - always show inspiration hint placeholder
+    return selectedPrompt?.placeholder || "How was your day? Write about what happened today...";
   };
 
   return (
@@ -179,95 +203,79 @@ export function DiaryEditor({
 
       {/* Daily Mission (Challenge Mode) */}
       {mode === "challenge" && (
-        <DailyMission word={todayWord} isCompleted={wordUsed} />
-      )}
+        <>
+          <DailyMission word={todayWord} isCompleted={wordUsed} />
 
-      {/* Topic Selector (Free Mode only) */}
-      {mode === "free" && (
-        <div className="mb-6">
-          {selectedPrompt ? (
+          {/* Today's Topic (Fixed + Shuffle) */}
+          <div className="mb-6">
             <div className="bg-gradient-to-r from-amber-50/80 to-orange-50/80 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200/50 dark:border-amber-800/50 rounded-xl p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3 flex-1">
-                  <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-lg">
-                    <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
-                        오늘의 주제
-                      </span>
-                      <div className="flex items-center gap-1.5">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button className="text-xs text-amber-600 dark:text-amber-500 hover:text-amber-800 dark:hover:text-amber-300 flex items-center gap-0.5 transition-colors">
-                              변경 <ChevronDown className="h-3 w-3" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="w-56">
-                            {prompts.map((prompt) => (
-                              <DropdownMenuItem
-                                key={prompt.id}
-                                onClick={() => setSelectedPrompt(prompt)}
-                                className={selectedPrompt?.id === prompt.id ? "bg-accent" : ""}
-                              >
-                                {prompt.title}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                        <span className="text-amber-300 dark:text-amber-700">•</span>
-                        <button
-                          onClick={shufflePrompt}
-                          disabled={shuffleCount >= SHUFFLE_LIMIT || isShuffling}
-                          className="text-xs text-amber-600 dark:text-amber-500 hover:text-amber-800 dark:hover:text-amber-300 flex items-center gap-0.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                          title={
-                            shuffleCount >= SHUFFLE_LIMIT
-                              ? "오늘의 셔플 기회를 모두 사용했어요"
-                              : `랜덤 주제로 바꾸기 (${SHUFFLE_LIMIT - shuffleCount}회 남음)`
-                          }
-                        >
-                          <RotateCw className={`h-3 w-3 ${isShuffling ? "animate-spin" : ""}`} />
-                          셔플 {shuffleCount >= SHUFFLE_LIMIT ? "" : `(${SHUFFLE_LIMIT - shuffleCount})`}
-                        </button>
-                      </div>
-                    </div>
-                    <p className={`text-amber-900 dark:text-amber-100 font-medium transition-opacity ${isShuffling ? "opacity-50" : "opacity-100"}`}>
-                      {selectedPrompt.title}
-                    </p>
-                  </div>
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-lg">
+                  <Sparkles className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                 </div>
-                <button
-                  onClick={clearPrompt}
-                  className="p-1.5 text-amber-500 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 rounded-lg transition-colors"
-                  title="자유 주제로 변경"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                      📝 오늘의 주제
+                    </span>
+                    <button
+                      onClick={shufflePrompt}
+                      disabled={shuffleCount >= SHUFFLE_LIMIT || isShuffling}
+                      className="text-xs text-amber-600 dark:text-amber-500 hover:text-amber-800 dark:hover:text-amber-300 flex items-center gap-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      title={
+                        shuffleCount >= SHUFFLE_LIMIT
+                          ? "오늘의 셔플 기회를 모두 사용했어요"
+                          : `다시 뽑기 (${SHUFFLE_LIMIT - shuffleCount}회 남음)`
+                      }
+                    >
+                      <RotateCw className={`h-3 w-3 ${isShuffling ? "animate-spin" : ""}`} />
+                      셔플 {shuffleCount >= SHUFFLE_LIMIT ? "불가" : `(${SHUFFLE_LIMIT - shuffleCount})`}
+                    </button>
+                  </div>
+                  <p className={`text-amber-900 dark:text-amber-100 font-medium transition-opacity ${isShuffling ? "opacity-50" : "opacity-100"}`}>
+                    {selectedPrompt?.title || "오늘 하루 어땠나요?"}
+                  </p>
+                  <p className="text-xs text-amber-600/70 dark:text-amber-400/70 mt-2">
+                    * 셔플은 하루에 {SHUFFLE_LIMIT}회만 가능합니다
+                  </p>
+                </div>
               </div>
             </div>
-          ) : (
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-sm text-muted-foreground">자유롭게 쓰기</span>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="text-sm text-primary hover:text-primary/80 flex items-center gap-1 transition-colors">
-                    주제 선택하기 <ChevronDown className="h-3 w-3" />
+          </div>
+        </>
+      )}
+
+      {/* Inspiration Hint (Free Mode only) */}
+      {mode === "free" && (
+        <div className="mb-6">
+          <div className="bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200/50 dark:border-blue-800/50 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                <Lightbulb className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-blue-700 dark:text-blue-400">
+                    💡 오늘의 영감
+                  </span>
+                  <button
+                    onClick={changeInspiration}
+                    disabled={isShuffling}
+                    className="text-xs text-blue-600 dark:text-blue-500 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1 transition-colors disabled:opacity-40"
+                  >
+                    <RotateCw className={`h-3 w-3 ${isShuffling ? "animate-spin" : ""}`} />
+                    다른 영감 보기
                   </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="w-56">
-                  {prompts.map((prompt) => (
-                    <DropdownMenuItem
-                      key={prompt.id}
-                      onClick={() => setSelectedPrompt(prompt)}
-                    >
-                      {prompt.title}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                </div>
+                <p className={`text-blue-900 dark:text-blue-100 font-medium transition-opacity ${isShuffling ? "opacity-50" : "opacity-100"}`}>
+                  {selectedPrompt?.title || "오늘 하루 어땠나요?"}
+                </p>
+                <p className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-2">
+                  * 이 영감을 따라도 되고, 자유롭게 쓰셔도 됩니다
+                </p>
+              </div>
             </div>
-          )}
+          </div>
         </div>
       )}
 
