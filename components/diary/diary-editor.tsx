@@ -183,91 +183,92 @@ export function DiaryEditor({
       )}
 
       {/* Topic Selector (Free Mode only) */}
-      {mode === "free" && <div className="mb-6">
-        {selectedPrompt ? (
-          <div className="bg-gradient-to-r from-amber-50/80 to-orange-50/80 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200/50 dark:border-amber-800/50 rounded-xl p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3 flex-1">
-                <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-lg">
-                  <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
-                      오늘의 주제
-                    </span>
-                    <div className="flex items-center gap-1.5">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="text-xs text-amber-600 dark:text-amber-500 hover:text-amber-800 dark:hover:text-amber-300 flex items-center gap-0.5 transition-colors">
-                            변경 <ChevronDown className="h-3 w-3" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="w-56">
-                          {prompts.map((prompt) => (
-                            <DropdownMenuItem
-                              key={prompt.id}
-                              onClick={() => setSelectedPrompt(prompt)}
-                              className={selectedPrompt?.id === prompt.id ? "bg-accent" : ""}
-                            >
-                              {prompt.title}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                      <span className="text-amber-300 dark:text-amber-700">•</span>
-                      <button
-                        onClick={shufflePrompt}
-                        disabled={shuffleCount >= SHUFFLE_LIMIT || isShuffling}
-                        className="text-xs text-amber-600 dark:text-amber-500 hover:text-amber-800 dark:hover:text-amber-300 flex items-center gap-0.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                        title={
-                          shuffleCount >= SHUFFLE_LIMIT
-                            ? "오늘의 셔플 기회를 모두 사용했어요"
-                            : `랜덤 주제로 바꾸기 (${SHUFFLE_LIMIT - shuffleCount}회 남음)`
-                        }
-                      >
-                        <RotateCw className={`h-3 w-3 ${isShuffling ? "animate-spin" : ""}`} />
-                        셔플 {shuffleCount >= SHUFFLE_LIMIT ? "" : `(${SHUFFLE_LIMIT - shuffleCount})`}
-                      </button>
-                    </div>
+      {mode === "free" && (
+        <div className="mb-6">
+          {selectedPrompt ? (
+            <div className="bg-gradient-to-r from-amber-50/80 to-orange-50/80 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200/50 dark:border-amber-800/50 rounded-xl p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3 flex-1">
+                  <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-lg">
+                    <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                   </div>
-                  <p className={`text-amber-900 dark:text-amber-100 font-medium transition-opacity ${isShuffling ? "opacity-50" : "opacity-100"}`}>
-                    {selectedPrompt.title}
-                  </p>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                        오늘의 주제
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="text-xs text-amber-600 dark:text-amber-500 hover:text-amber-800 dark:hover:text-amber-300 flex items-center gap-0.5 transition-colors">
+                              변경 <ChevronDown className="h-3 w-3" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="w-56">
+                            {prompts.map((prompt) => (
+                              <DropdownMenuItem
+                                key={prompt.id}
+                                onClick={() => setSelectedPrompt(prompt)}
+                                className={selectedPrompt?.id === prompt.id ? "bg-accent" : ""}
+                              >
+                                {prompt.title}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <span className="text-amber-300 dark:text-amber-700">•</span>
+                        <button
+                          onClick={shufflePrompt}
+                          disabled={shuffleCount >= SHUFFLE_LIMIT || isShuffling}
+                          className="text-xs text-amber-600 dark:text-amber-500 hover:text-amber-800 dark:hover:text-amber-300 flex items-center gap-0.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          title={
+                            shuffleCount >= SHUFFLE_LIMIT
+                              ? "오늘의 셔플 기회를 모두 사용했어요"
+                              : `랜덤 주제로 바꾸기 (${SHUFFLE_LIMIT - shuffleCount}회 남음)`
+                          }
+                        >
+                          <RotateCw className={`h-3 w-3 ${isShuffling ? "animate-spin" : ""}`} />
+                          셔플 {shuffleCount >= SHUFFLE_LIMIT ? "" : `(${SHUFFLE_LIMIT - shuffleCount})`}
+                        </button>
+                      </div>
+                    </div>
+                    <p className={`text-amber-900 dark:text-amber-100 font-medium transition-opacity ${isShuffling ? "opacity-50" : "opacity-100"}`}>
+                      {selectedPrompt.title}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <button
-                onClick={clearPrompt}
-                className="p-1.5 text-amber-500 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 rounded-lg transition-colors"
-                title="자유 주제로 변경"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center justify-center gap-2">
-            <span className="text-sm text-muted-foreground">자유롭게 쓰기</span>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="text-sm text-primary hover:text-primary/80 flex items-center gap-1 transition-colors">
-                  주제 선택하기 <ChevronDown className="h-3 w-3" />
+                <button
+                  onClick={clearPrompt}
+                  className="p-1.5 text-amber-500 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 rounded-lg transition-colors"
+                  title="자유 주제로 변경"
+                >
+                  <X className="h-4 w-4" />
                 </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-56">
-                {prompts.map((prompt) => (
-                  <DropdownMenuItem
-                    key={prompt.id}
-                    onClick={() => setSelectedPrompt(prompt)}
-                  >
-                    {prompt.title}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        )}
-      </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-sm text-muted-foreground">자유롭게 쓰기</span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="text-sm text-primary hover:text-primary/80 flex items-center gap-1 transition-colors">
+                    주제 선택하기 <ChevronDown className="h-3 w-3" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-56">
+                  {prompts.map((prompt) => (
+                    <DropdownMenuItem
+                      key={prompt.id}
+                      onClick={() => setSelectedPrompt(prompt)}
+                    >
+                      {prompt.title}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Diary Paper */}
