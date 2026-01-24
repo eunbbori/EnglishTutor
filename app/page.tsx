@@ -10,7 +10,7 @@ import { CorrectionResult } from "@/components/diary/correction-result";
 import { CalendarView } from "@/components/calendar/calendar-view";
 import { Toaster } from "@/components/ui/toaster";
 import { Badge } from "@/components/ui/badge";
-import { PenLine, Flame, History, Calendar } from "lucide-react";
+import { PenLine, Flame, History, Calendar, BookOpen } from "lucide-react";
 import Link from "next/link";
 
 interface UsageStatus {
@@ -264,6 +264,16 @@ export default function Home() {
                 >
                   <History className="h-4 w-4" />
                   <span className="hidden sm:inline">기록</span>
+                </Link>
+              )}
+              {/* Vocabulary Link */}
+              {session?.user && (
+                <Link
+                  href="/vocabulary"
+                  className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <BookOpen className="h-4 w-4" />
+                  <span className="hidden sm:inline">단어장</span>
                 </Link>
               )}
               {session?.user && usageStatus && (

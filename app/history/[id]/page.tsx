@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calendar, CheckCircle2, Lightbulb, RefreshCw, ArrowRight, ArrowRightLeft } from "lucide-react";
+import { ArrowLeft, Calendar, CheckCircle2, Lightbulb, RefreshCw, ArrowRight, ArrowRightLeft, Book } from "lucide-react";
 import { SelectableText } from "@/components/vocabulary/selectable-text";
 
 interface DiaryEntryDetail {
@@ -113,10 +113,19 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
               <ArrowLeft className="h-4 w-4" />
               <span className="text-sm">목록으로</span>
             </Link>
-            <Badge variant="outline" className="gap-1">
-              <CheckCircle2 className="h-3 w-3 text-green-500" />
-              교정 완료
-            </Badge>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/vocabulary"
+                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Book className="h-4 w-4" />
+                <span className="hidden sm:inline">단어장</span>
+              </Link>
+              <Badge variant="outline" className="gap-1">
+                <CheckCircle2 className="h-3 w-3 text-green-500" />
+                교정 완료
+              </Badge>
+            </div>
           </div>
         </div>
       </header>

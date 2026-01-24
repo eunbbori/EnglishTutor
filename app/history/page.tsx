@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, BookOpen, Calendar, PenLine } from "lucide-react";
+import { ArrowLeft, BookOpen, Calendar, PenLine, Book } from "lucide-react";
 
 interface DiaryEntry {
   id: string;
@@ -92,12 +92,21 @@ export default function HistoryPage() {
                 <h1 className="text-lg font-bold">나의 일기장</h1>
               </div>
             </div>
-            <Button asChild variant="outline" size="sm" className="gap-2">
-              <Link href="/">
-                <PenLine className="h-4 w-4" />
-                새 일기 쓰기
+            <div className="flex items-center gap-3">
+              <Link
+                href="/vocabulary"
+                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Book className="h-4 w-4" />
+                <span className="hidden sm:inline">단어장</span>
               </Link>
-            </Button>
+              <Button asChild variant="outline" size="sm" className="gap-2">
+                <Link href="/">
+                  <PenLine className="h-4 w-4" />
+                  새 일기 쓰기
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
