@@ -13,6 +13,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import { SelectableText } from "@/components/vocabulary/selectable-text";
+import { OnboardingTooltip } from "@/components/vocabulary/onboarding-tooltip";
 
 interface Alternative {
   type: string;
@@ -67,6 +68,9 @@ export function CorrectionResult({ data, onNewEntry, chatId }: CorrectionResultP
         <p className="text-muted-foreground">{dateString}의 일기</p>
       </div>
 
+      {/* Onboarding Tooltip */}
+      <OnboardingTooltip />
+
       {/* Original & Corrected Comparison */}
       <Card className="mb-6 overflow-hidden">
         <CardContent className="p-0">
@@ -104,6 +108,14 @@ export function CorrectionResult({ data, onNewEntry, chatId }: CorrectionResultP
                 {correctedText}
               </p>
             </SelectableText>
+
+            {/* Visual Hint */}
+            <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-primary/10 border border-primary/20 rounded-lg">
+              <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+              <span className="text-sm font-medium text-primary">
+                💡 텍스트를 드래그하여 표현 노트에 저장하세요
+              </span>
+            </div>
           </div>
         </CardContent>
       </Card>

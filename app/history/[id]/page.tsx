@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calendar, CheckCircle2, Lightbulb, RefreshCw, ArrowRight, ArrowRightLeft, Book } from "lucide-react";
+import { ArrowLeft, Calendar, CheckCircle2, Lightbulb, RefreshCw, ArrowRight, ArrowRightLeft, Book, Sparkles } from "lucide-react";
 import { SelectableText } from "@/components/vocabulary/selectable-text";
 
 interface DiaryEntryDetail {
@@ -179,6 +179,14 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
                 {entry.correctedText}
               </p>
             </SelectableText>
+
+            {/* Visual Hint */}
+            <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-primary/10 border border-primary/20 rounded-lg">
+              <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+              <span className="text-sm font-medium text-primary">
+                💡 텍스트를 드래그하여 표현 노트에 저장하세요
+              </span>
+            </div>
           </div>
         </section>
 

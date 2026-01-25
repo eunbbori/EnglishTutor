@@ -57,6 +57,13 @@
       "when": 1769243508374,
       "tag": "0007_fantastic_wallop",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1769261514807,
+      "tag": "0008_dapper_bishop",
+      "breakpoints": true
     }
   ]
 }

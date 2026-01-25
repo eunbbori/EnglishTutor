@@ -227,6 +227,12 @@ export const vocabulary = pgTable("vocabulary", {
   memo: text("memo"), // Optional user notes
   sourceType: text("source_type", { enum: ["diary", "chat", "manual"] }).notNull().default("manual"), // Where this word came from
   sourceId: uuid("source_id"), // Reference to chat/diary entry (nullable for manual entries)
+  // AI-enriched fields
+  pronunciation: text("pronunciation"), // IPA pronunciation (e.g., /ˈɡreɪtfəl/)
+  partOfSpeech: text("part_of_speech"), // Part of speech (e.g., noun, verb, adjective)
+  synonyms: text("synonyms").array(), // Array of synonyms (max 3)
+  context: text("context"), // Original context from source text
+  difficulty: text("difficulty", { enum: ["beginner", "intermediate", "advanced"] }), // Difficulty level
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
