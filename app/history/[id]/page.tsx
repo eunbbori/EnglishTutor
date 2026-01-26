@@ -119,7 +119,7 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
                 className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Book className="h-4 w-4" />
-                <span className="hidden sm:inline">단어장</span>
+                <span className="hidden sm:inline">표현노트</span>
               </Link>
               <Badge variant="outline" className="gap-1">
                 <CheckCircle2 className="h-3 w-3 text-green-500" />

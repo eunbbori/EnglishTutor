@@ -58,7 +58,7 @@ export function WordTooltip({
           ) : (
             <>
               <BookmarkPlus className="h-3 w-3" />
-              단어장에 저장
+              표현노트에 저장
             </>
           )}
         </Button>

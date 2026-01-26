@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, ReactNode } from "react";
+import { useState, useRef, ReactNode, useEffect, useMemo } from "react";
 import { WordTooltip } from "./word-tooltip";
 import { useToast } from "@/hooks/use-toast";
+import { highlightChildrenRecursively } from "@/lib/utils/text-highlighter";
 
 interface SelectableTextProps {
   children: ReactNode;
@@ -85,8 +86,28 @@ export function SelectableText({
     position: { x: number; y: number };
   } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [vocabularyWords, setVocabularyWords] = useState<string[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  // Fetch vocabulary words for highlighting
+  useEffect(() => {
+    const fetchVocabulary = async () => {
+      try {
+        const response = await fetch("/api/vocabulary");
+        if (response.ok) {
+          const data = await response.json();
+          // Extract just the word strings
+          const words = data.words.map((w: { word: string }) => w.word);
+          setVocabularyWords(words);
+        }
+      } catch (error) {
+        console.error("Failed to fetch vocabulary for highlighting:", error);
+      }
+    };
+
+    fetchVocabulary();
+  }, []);
 
   const handleMouseUp = () => {
     const selection = window.getSelection();
@@ -166,6 +187,17 @@ export function SelectableText({
     }
   };
 
+  // Process children to apply highlighting
+  const highlightedChildren = useMemo(() => {
+    // If no vocabulary words, return original children
+    if (vocabularyWords.length === 0) {
+      return children;
+    }
+
+    // Recursively process children and apply highlighting
+    return highlightChildrenRecursively(children, vocabularyWords);
+  }, [children, vocabularyWords]);
+
   return (
     <>
       <div
@@ -174,7 +206,7 @@ export function SelectableText({
         onMouseUp={handleMouseUp}
         style={{ userSelect: "text", cursor: "text" }}
       >
-        {children}
+        {highlightedChildren}
       </div>
 
       {tooltip && (

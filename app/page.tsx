@@ -273,7 +273,7 @@ export default function Home() {
                   className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <BookOpen className="h-4 w-4" />
-                  <span className="hidden sm:inline">단어장</span>
+                  <span className="hidden sm:inline">표현노트</span>
                 </Link>
               )}
               {session?.user && usageStatus && (
