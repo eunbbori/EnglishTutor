@@ -220,14 +220,14 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col bg-gradient-to-b from-amber-50/30 to-background dark:from-amber-950/10">
+    <main className="flex min-h-screen flex-col bg-ds-bg-primary">
       {/* Header */}
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+      <header className="border-b border-ds-border-light bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 sticky top-0 z-50 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <PenLine className="h-5 w-5 text-amber-600" />
-              <h1 className="text-lg font-bold">Daily English</h1>
+              <PenLine className="h-5 w-5 text-ds-accent-primary" />
+              <h1 className="font-handwriting text-2xl font-bold text-ds-text-primary">Daily English</h1>
             </div>
             <div className="flex items-center gap-3">
               {/* Streak Badge */}

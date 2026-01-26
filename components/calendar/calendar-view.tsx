@@ -129,10 +129,11 @@ export function CalendarView({ onWriteToday }: CalendarViewProps) {
             size="icon"
             onClick={handlePreviousMonth}
             aria-label="이전 달"
+            className="hover:bg-ds-bg-secondary text-ds-text-primary"
           >
             <ChevronLeft className="h-5 w-5" />
           </Button>
-          <h2 className="text-lg font-semibold min-w-[140px] text-center">
+          <h2 className="font-handwriting text-2xl font-bold min-w-[140px] text-center text-ds-text-primary">
             {getMonthNameEnglish(month)} {year}
           </h2>
           <Button
@@ -141,6 +142,7 @@ export function CalendarView({ onWriteToday }: CalendarViewProps) {
             onClick={handleNextMonth}
             disabled={!canGoNext}
             aria-label="다음 달"
+            className="hover:bg-ds-bg-secondary text-ds-text-primary disabled:opacity-40"
           >
             <ChevronRight className="h-5 w-5" />
           </Button>
@@ -148,19 +150,19 @@ export function CalendarView({ onWriteToday }: CalendarViewProps) {
         <Button
           onClick={onWriteToday}
           size="sm"
-          className="bg-amber-500 hover:bg-amber-600 text-white"
+          className="bg-ds-accent-primary hover:bg-ds-accent-hover text-white shadow-card rounded-full gap-1"
         >
-          <PenLine className="h-4 w-4 mr-1" />
+          <PenLine className="h-4 w-4" />
           오늘 쓰기
         </Button>
       </div>
 
       {/* Weekday Headers */}
-      <div className="grid grid-cols-7 gap-1 mb-1">
+      <div className="grid grid-cols-7 gap-1 mb-2">
         {WEEKDAYS.map((day) => (
           <div
             key={day}
-            className="text-center text-xs font-medium text-muted-foreground py-1"
+            className="text-center text-xs font-medium text-ds-text-secondary py-1"
           >
             {day}
           </div>
@@ -174,7 +176,7 @@ export function CalendarView({ onWriteToday }: CalendarViewProps) {
           Array.from({ length: 35 }).map((_, i) => (
             <div
               key={`skeleton-${i}`}
-              className="aspect-square w-full rounded-lg bg-muted/30 animate-pulse"
+              className="aspect-square w-full rounded-full bg-ds-bg-secondary/40 animate-pulse"
             />
           ))
         ) : (
@@ -183,13 +185,13 @@ export function CalendarView({ onWriteToday }: CalendarViewProps) {
       </div>
 
       {/* Heatmap Legend */}
-      <div className="flex items-center justify-end gap-2 mt-4 text-xs text-muted-foreground">
+      <div className="flex items-center justify-end gap-2 mt-4 text-xs text-ds-text-muted">
         <span>적음</span>
         <div className="flex gap-0.5">
-          <div className="w-3 h-3 rounded bg-amber-100 dark:bg-amber-900/30" />
-          <div className="w-3 h-3 rounded bg-amber-200 dark:bg-amber-800/40" />
-          <div className="w-3 h-3 rounded bg-amber-300 dark:bg-amber-700/50" />
-          <div className="w-3 h-3 rounded bg-amber-500 dark:bg-amber-600/60" />
+          <div className="w-3 h-3 rounded-full bg-ds-pastel-yellow/40 border border-ds-pastel-yellow" />
+          <div className="w-3 h-3 rounded-full bg-ds-pastel-mint/50 border border-ds-pastel-mint" />
+          <div className="w-3 h-3 rounded-full bg-ds-pastel-coral/50 border border-ds-pastel-coral" />
+          <div className="w-3 h-3 rounded-full bg-ds-pastel-lavender/60 border border-ds-pastel-lavender" />
         </div>
         <span>많음</span>
       </div>
