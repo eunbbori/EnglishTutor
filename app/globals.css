@@ -2,50 +2,75 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Google Fonts - Caveat (손글씨 폰트) */
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap');
+
+/* Google Fonts - Inter (산세리프 폰트) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Design System Colors - 레퍼런스 디자인 기반 */
+    --background: 35 28% 95%;        /* #F5F1E8 베이지/크림 */
+    --foreground: 25 36% 19%;        /* #3D2E1F 다크 브라운 */
+
+    --card: 0 0% 100%;               /* #FFFFFF 화이트 카드 */
+    --card-foreground: 25 36% 19%;   /* #3D2E1F */
+
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    --popover-foreground: 25 36% 19%;
+
+    --primary: 25 27% 59%;           /* #B8917B 브라운/테라코타 */
+    --primary-foreground: 0 0% 100%; /* 화이트 텍스트 */
+
+    --secondary: 25 36% 88%;         /* #E8DFD0 어두운 베이지 */
+    --secondary-foreground: 25 36% 19%;
+
+    --muted: 25 36% 88%;             /* #E8DFD0 */
+    --muted-foreground: 25 17% 54%;  /* #9B8B7E 라이트 브라운 */
+
+    --accent: 25 27% 59%;            /* #B8917B 브라운 강조 */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 47% 66%;        /* #D97777 에러 레드 */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 28% 81%;            /* #E8DFD0 테두리 */
+    --input: 30 28% 81%;             /* #E8DFD0 입력 필드 */
+    --ring: 25 27% 59%;              /* #B8917B 포커스 링 */
+
+    --radius: 0.75rem;               /* 12px - 기본 radius */
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    /* Dark Mode - 따뜻한 다크 톤 유지 */
+    --background: 25 36% 12%;        /* 다크 브라운 배경 */
+    --foreground: 35 28% 95%;        /* 밝은 베이지 텍스트 */
+
+    --card: 25 36% 16%;              /* 다크 카드 */
+    --card-foreground: 35 28% 95%;
+
+    --popover: 25 36% 16%;
+    --popover-foreground: 35 28% 95%;
+
+    --primary: 25 27% 59%;           /* #B8917B 유지 */
+    --primary-foreground: 25 36% 12%;
+
+    --secondary: 25 17% 28%;         /* 다크 세컨더리 */
+    --secondary-foreground: 35 28% 95%;
+
+    --muted: 25 17% 28%;
+    --muted-foreground: 25 17% 54%;  /* #9B8B7E */
+
+    --accent: 25 27% 59%;            /* #B8917B */
+    --accent-foreground: 25 36% 12%;
+
+    --destructive: 0 47% 66%;        /* #D97777 */
+    --destructive-foreground: 35 28% 95%;
+
+    --border: 25 17% 28%;
+    --input: 25 17% 28%;
+    --ring: 25 27% 59%;
   }
 }
 
@@ -53,7 +78,105 @@
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* 손글씨 스타일 헤딩 */
+  h1, h2 {
+    @apply font-handwriting;
+  }
+}
+
+@layer utilities {
+  /* Design System 유틸리티 클래스 */
+
+  /* 배경 색상 */
+  .bg-ds-primary {
+    background-color: #F5F1E8;
+  }
+
+  .bg-ds-secondary {
+    background-color: #E8DFD0;
+  }
+
+  /* 마스킹 테이프 스타일 */
+  .masking-tape {
+    position: relative;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    box-shadow: 0 1px 3px rgba(61, 46, 31, 0.1);
+  }
+
+  .masking-tape::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    opacity: 0.15;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      currentColor 10px,
+      currentColor 11px
+    );
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  /* 카드 스타일 */
+  .card-diary {
+    @apply bg-card rounded-lg shadow-card border border-ds-border-light;
+  }
+
+  .card-elevated {
+    @apply bg-card rounded-lg shadow-elevated;
+  }
+
+  /* 텍스트 스타일 */
+  .text-ds-primary {
+    color: #3D2E1F;
+  }
+
+  .text-ds-muted {
+    color: #9B8B7E;
+  }
+
+  /* 노트 스타일 (줄무늬) */
+  .notebook-lines {
+    background-image: repeating-linear-gradient(
+      transparent,
+      transparent 1.5rem,
+      #E8DFD0 1.5rem,
+      #E8DFD0 calc(1.5rem + 1px)
+    );
+  }
+
+  /* 핀/클립 장식 */
+  .pin-decoration {
+    position: relative;
+  }
+
+  .pin-decoration::before {
+    content: '';
+    position: absolute;
+    top: -0.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0.75rem;
+    height: 0.75rem;
+    background: #D97777;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg) translateX(-50%);
+  }
+
+  /* 부드러운 트랜지션 */
+  .transition-smooth {
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
