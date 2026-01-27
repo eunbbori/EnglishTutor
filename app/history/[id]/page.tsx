@@ -101,38 +101,38 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
   const date = formatDate(entry.createdAt);
 
   return (
-    <div className="min-h-screen bg-ds-bg-primary relative">
-      {/* Notebook binding (left side) */}
-      <div className="fixed left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-amber-900/10 to-transparent pointer-events-none z-0">
+    <div className="min-h-screen vintage-bg relative">
+      {/* Notebook binding (left side) - vintage style */}
+      <div className="fixed left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-amber-900/20 via-amber-800/10 to-transparent pointer-events-none z-0 shadow-inner">
         <div className="flex flex-col items-center gap-16 pt-24">
-          <div className="w-3 h-3 rounded-full bg-zinc-300 shadow-inner" />
-          <div className="w-3 h-3 rounded-full bg-zinc-300 shadow-inner" />
-          <div className="w-3 h-3 rounded-full bg-zinc-300 shadow-inner" />
-          <div className="w-3 h-3 rounded-full bg-zinc-300 shadow-inner" />
-          <div className="w-3 h-3 rounded-full bg-zinc-300 shadow-inner" />
+          <div className="w-4 h-4 rounded-full bg-amber-900/30 shadow-inner border border-amber-800/20" />
+          <div className="w-4 h-4 rounded-full bg-amber-900/30 shadow-inner border border-amber-800/20" />
+          <div className="w-4 h-4 rounded-full bg-amber-900/30 shadow-inner border border-amber-800/20" />
+          <div className="w-4 h-4 rounded-full bg-amber-900/30 shadow-inner border border-amber-800/20" />
+          <div className="w-4 h-4 rounded-full bg-amber-900/30 shadow-inner border border-amber-800/20" />
         </div>
       </div>
 
       {/* Header */}
-      <header className="border-b border-ds-border-light bg-white/95 backdrop-blur sticky top-0 z-50 shadow-sm">
+      <header className="border-b-2 border-amber-900/20 bg-gradient-to-b from-amber-50/80 to-transparent backdrop-blur sticky top-0 z-50 shadow-md">
         <div className="max-w-5xl mx-auto px-4 py-4 md:px-8">
           <div className="flex items-center justify-between">
             {/* Left: Back button + Date */}
             <div className="flex items-center gap-4">
               <Link
                 href="/history"
-                className="flex items-center gap-2 text-ds-text-secondary hover:text-ds-text-primary transition-smooth"
+                className="flex items-center gap-2 text-amber-800 hover:text-amber-900 transition-smooth"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span className="text-sm">기록</span>
+                <span className="text-sm font-medium">기록</span>
               </Link>
-              {/* Small date badge */}
-              <div className="bg-white border-2 border-ds-border-light rounded-lg px-3 py-1.5 shadow-sm">
+              {/* Small date badge - vintage style */}
+              <div className="bg-amber-100/50 border-2 border-amber-800/30 rounded-lg px-3 py-1.5 shadow-md transform rotate-1">
                 <div className="text-center">
-                  <p className="text-xs text-ds-text-muted font-medium">
+                  <p className="text-xs text-amber-800/70 font-medium uppercase">
                     {date.month}
                   </p>
-                  <p className="text-2xl font-handwriting font-bold text-ds-accent-primary leading-none">
+                  <p className="text-2xl font-handwriting font-bold text-amber-900 leading-none">
                     {date.day}
                   </p>
                 </div>
@@ -140,7 +140,7 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
             </div>
 
             {/* Center: Title */}
-            <h1 className="font-handwriting text-2xl font-bold text-ds-text-primary absolute left-1/2 -translate-x-1/2">
+            <h1 className="font-handwriting text-3xl font-bold text-amber-900 absolute left-1/2 -translate-x-1/2">
               Daily English
             </h1>
 
@@ -148,7 +148,7 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
             <div className="flex items-center gap-3">
               <Link
                 href="/vocabulary"
-                className="flex items-center gap-1 text-sm text-ds-text-secondary hover:text-ds-text-primary transition-smooth"
+                className="flex items-center gap-1 text-sm text-amber-800 hover:text-amber-900 transition-smooth font-medium"
               >
                 <Book className="h-4 w-4" />
                 <span className="hidden sm:inline">표현노트</span>
@@ -161,18 +161,20 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
       <main className="max-w-4xl mx-auto p-4 md:p-8 relative z-10">
 
         {/* Original Text */}
-        <section className="mb-8">
+        <section className="mb-12 transform hover:scale-[1.01] transition-transform">
           <div className="relative">
-            {/* Masking tape */}
-            <div className="absolute -top-3 left-8 w-20 h-6 bg-ds-pastel-yellow/70 rounded-sm shadow-sm transform -rotate-2" />
+            {/* Masking tape - vintage style */}
+            <div className="absolute -top-4 left-12 w-32 h-8 bg-amber-200/60 rounded-sm shadow-md transform -rotate-3 border border-amber-300/40">
+              <div className="w-full h-full opacity-20 bg-gradient-to-r from-transparent via-amber-900/10 to-transparent" />
+            </div>
 
-            <div className="card-diary p-6 relative">
-              <h2 className="text-sm font-medium text-ds-text-muted mb-4 flex items-center gap-2">
+            <div className="torn-paper p-6 relative transform rotate-[-0.5deg]">
+              <h2 className="text-sm font-semibold text-amber-800 mb-4 flex items-center gap-2 uppercase tracking-wide">
                 <span>✏️</span>
-                <span>내가 쓴 일기</span>
+                <span>오늘의 일기</span>
               </h2>
-              <div className="relative pl-4 border-l-2 border-red-200/60">
-                <p className="text-lg leading-8 text-ds-text-primary" style={{ fontFamily: "'Georgia', serif" }}>
+              <div className="relative pl-4 border-l-2 border-amber-300/60">
+                <p className="text-lg leading-8 text-amber-900" style={{ fontFamily: "'Georgia', serif" }}>
                   {entry.originalText}
                 </p>
               </div>
@@ -181,22 +183,24 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
         </section>
 
         {/* Arrow */}
-        <div className="flex justify-center my-6">
-          <div className="p-2 bg-ds-pastel-coral/50 border border-ds-pastel-coral rounded-full shadow-sm">
-            <ArrowRightLeft className="h-5 w-5 text-ds-accent-primary" />
+        <div className="flex justify-center my-8">
+          <div className="p-3 bg-amber-200/40 border-2 border-amber-800/20 rounded-full shadow-md">
+            <ArrowRightLeft className="h-6 w-6 text-amber-900" />
           </div>
         </div>
 
         {/* Corrected Text */}
-        <section className="mb-8">
+        <section className="mb-12 transform hover:scale-[1.01] transition-transform">
           <div className="relative">
-            {/* Masking tape */}
-            <div className="absolute -top-3 right-8 w-20 h-6 bg-ds-pastel-mint/70 rounded-sm shadow-sm transform rotate-2" />
+            {/* Masking tape - vintage style */}
+            <div className="absolute -top-4 right-12 w-32 h-8 bg-green-200/50 rounded-sm shadow-md transform rotate-2 border border-green-300/40">
+              <div className="w-full h-full opacity-20 bg-gradient-to-r from-transparent via-green-900/10 to-transparent" />
+            </div>
 
-            <div className="card-diary p-6 relative bg-green-50/30 border-green-200/40">
-              <h2 className="text-sm font-medium text-ds-text-muted mb-4 flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                <span>교정된 문장</span>
+            <div className="torn-paper p-6 relative bg-green-50/20 transform rotate-[0.5deg]">
+              <h2 className="text-sm font-semibold text-green-800 mb-4 flex items-center gap-2 uppercase tracking-wide">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <span>교정</span>
               </h2>
               <SelectableText sourceType="diary" sourceId={entry.chatId}>
                 <p className="text-lg leading-8 text-green-900" style={{ fontFamily: "'Georgia', serif" }}>
@@ -205,9 +209,9 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
               </SelectableText>
 
               {/* Visual Hint */}
-              <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-ds-pastel-yellow/30 border border-ds-pastel-yellow rounded-lg">
-                <Sparkles className="h-4 w-4 text-ds-accent-primary animate-pulse" />
-                <span className="text-sm font-medium text-ds-accent-primary">
+              <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-amber-100/40 border border-amber-800/20 rounded">
+                <Sparkles className="h-4 w-4 text-amber-800 animate-pulse" />
+                <span className="text-xs font-medium text-amber-900">
                   텍스트를 드래그하여 표현 노트에 저장하세요
                 </span>
               </div>
@@ -217,17 +221,19 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
 
         {/* Korean Explanation */}
         {entry.koreanExplanation && (
-          <section className="mb-8">
+          <section className="mb-12 transform hover:scale-[1.01] transition-transform">
             <div className="relative">
-              {/* Masking tape */}
-              <div className="absolute -top-3 left-12 w-20 h-6 bg-ds-pastel-coral/70 rounded-sm shadow-sm transform -rotate-1" />
+              {/* Masking tape - vintage style */}
+              <div className="absolute -top-4 left-16 w-28 h-8 bg-orange-200/50 rounded-sm shadow-md transform -rotate-2 border border-orange-300/40">
+                <div className="w-full h-full opacity-20 bg-gradient-to-r from-transparent via-orange-900/10 to-transparent" />
+              </div>
 
-              <div className="card-diary p-6 relative bg-ds-pastel-yellow/10 border-ds-pastel-yellow/40">
-                <h2 className="text-sm font-medium text-ds-text-muted mb-4 flex items-center gap-2">
-                  <Lightbulb className="h-4 w-4 text-ds-accent-primary" />
+              <div className="torn-paper p-6 relative bg-amber-50/30 transform rotate-[-0.3deg]">
+                <h2 className="text-sm font-semibold text-amber-900 mb-4 flex items-center gap-2 uppercase tracking-wide">
+                  <Lightbulb className="h-4 w-4 text-amber-700" />
                   <span>설명</span>
                 </h2>
-                <p className="text-base leading-7 text-ds-text-primary whitespace-pre-wrap">
+                <p className="text-base leading-7 text-amber-900 whitespace-pre-wrap">
                   {entry.koreanExplanation}
                 </p>
               </div>
@@ -237,24 +243,26 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
 
         {/* Alternatives */}
         {entry.alternatives && entry.alternatives.length > 0 && (
-          <section className="mb-8">
+          <section className="mb-12 transform hover:scale-[1.01] transition-transform">
             <div className="relative">
-              {/* Masking tape */}
-              <div className="absolute -top-3 right-12 w-20 h-6 bg-ds-pastel-lavender/70 rounded-sm shadow-sm transform rotate-1" />
+              {/* Masking tape - vintage style */}
+              <div className="absolute -top-4 right-16 w-28 h-8 bg-blue-200/50 rounded-sm shadow-md transform rotate-2 border border-blue-300/40">
+                <div className="w-full h-full opacity-20 bg-gradient-to-r from-transparent via-blue-900/10 to-transparent" />
+              </div>
 
-              <div className="card-diary p-6 relative bg-blue-50/20 border-blue-200/30">
-                <h2 className="text-sm font-medium text-ds-text-muted mb-4 flex items-center gap-2">
-                  <RefreshCw className="h-4 w-4 text-blue-500" />
+              <div className="torn-paper p-6 relative bg-blue-50/20 transform rotate-[0.4deg]">
+                <h2 className="text-sm font-semibold text-blue-800 mb-4 flex items-center gap-2 uppercase tracking-wide">
+                  <RefreshCw className="h-4 w-4 text-blue-600" />
                   <span>다른 표현</span>
                 </h2>
                 <div className="space-y-4">
                   {entry.alternatives.map((alt, index) => (
-                    <div key={index} className="bg-white/50 rounded-lg p-4 border border-ds-border-light">
-                      <Badge variant="secondary" className="mb-2 text-xs bg-ds-pastel-lavender/50">
+                    <div key={index} className="bg-white/60 rounded p-4 border border-amber-800/20 shadow-sm">
+                      <Badge variant="secondary" className="mb-2 text-xs bg-blue-100/50 text-blue-900 border-blue-300/40">
                         {alt.type}
                       </Badge>
                       <SelectableText sourceType="diary" sourceId={entry.chatId}>
-                        <p className="text-base text-ds-text-primary" style={{ fontFamily: "'Georgia', serif" }}>
+                        <p className="text-base text-amber-900" style={{ fontFamily: "'Georgia', serif" }}>
                           {alt.text}
                         </p>
                       </SelectableText>
@@ -268,17 +276,19 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
 
         {/* Insight */}
         {entry.insight && (
-          <section className="mb-8">
+          <section className="mb-12 transform hover:scale-[1.01] transition-transform">
             <div className="relative">
-              {/* Masking tape */}
-              <div className="absolute -top-3 left-16 w-20 h-6 bg-ds-pastel-pink/70 rounded-sm shadow-sm transform -rotate-2" />
+              {/* Masking tape - vintage style */}
+              <div className="absolute -top-4 left-20 w-28 h-8 bg-purple-200/50 rounded-sm shadow-md transform -rotate-1 border border-purple-300/40">
+                <div className="w-full h-full opacity-20 bg-gradient-to-r from-transparent via-purple-900/10 to-transparent" />
+              </div>
 
-              <div className="card-diary p-6 relative bg-purple-50/20 border-purple-200/30">
-                <h2 className="text-sm font-medium text-ds-text-muted mb-4 flex items-center gap-2">
+              <div className="torn-paper p-6 relative bg-purple-50/20 transform rotate-[-0.2deg]">
+                <h2 className="text-sm font-semibold text-purple-800 mb-4 flex items-center gap-2 uppercase tracking-wide">
                   <span className="text-base">💡</span>
-                  <span>오늘의 팁</span>
+                  <span>팁</span>
                 </h2>
-                <p className="text-base leading-7 text-ds-text-primary">
+                <p className="text-base leading-7 text-amber-900">
                   {entry.insight}
                 </p>
               </div>
@@ -287,14 +297,14 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
         )}
 
         {/* Footer Actions */}
-        <div className="flex justify-center gap-3 pt-6 border-t border-ds-border-light">
-          <Button asChild variant="outline" className="rounded-full border-2 border-ds-border-default hover:bg-ds-bg-secondary">
+        <div className="flex justify-center gap-4 pt-8 pb-4 border-t-2 border-amber-900/20">
+          <Button asChild variant="outline" className="rounded-full border-2 border-amber-800/40 bg-amber-50/50 hover:bg-amber-100/60 text-amber-900 shadow-md">
             <Link href="/history">
               <ArrowLeft className="h-4 w-4 mr-2" />
               목록으로
             </Link>
           </Button>
-          <Button asChild className="rounded-full bg-ds-accent-primary hover:bg-ds-accent-hover text-white shadow-card">
+          <Button asChild className="rounded-full bg-amber-800 hover:bg-amber-900 text-white shadow-lg">
             <Link href="/">
               새 일기 쓰기
               <ArrowRight className="h-4 w-4 ml-2" />

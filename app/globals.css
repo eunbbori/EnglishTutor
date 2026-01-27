@@ -157,6 +157,63 @@
     );
   }
 
+  /* 찢어진 종이 효과 (Vintage Scrapbook) */
+  .torn-paper {
+    position: relative;
+    background: linear-gradient(to bottom, #F5F1E8 0%, #EDE8DC 100%);
+    box-shadow:
+      0 2px 4px rgba(61, 46, 31, 0.1),
+      0 4px 8px rgba(61, 46, 31, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    filter: drop-shadow(1px 2px 3px rgba(61, 46, 31, 0.15));
+  }
+
+  .torn-paper::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent 3px,
+      rgba(61, 46, 31, 0.05) 3px,
+      rgba(61, 46, 31, 0.05) 6px
+    );
+  }
+
+  .torn-paper::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent 4px,
+      rgba(61, 46, 31, 0.05) 4px,
+      rgba(61, 46, 31, 0.05) 7px
+    );
+  }
+
+  /* 빈티지 배경 */
+  .vintage-bg {
+    background: linear-gradient(
+      135deg,
+      #E8DFD0 0%,
+      #D4C5B0 50%,
+      #C9B89A 100%
+    );
+    background-image:
+      radial-gradient(circle at 20% 50%, rgba(61, 46, 31, 0.03) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(139, 117, 87, 0.03) 0%, transparent 50%),
+      linear-gradient(135deg, #E8DFD0 0%, #D4C5B0 50%, #C9B89A 100%);
+  }
+
   /* 핀/클립 장식 */
   .pin-decoration {
     position: relative;
