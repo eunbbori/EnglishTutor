@@ -169,21 +169,21 @@ export function DiaryEditor({
       <div className="flex items-center justify-center mb-8">
         <div className="relative">
           {/* Date stamp */}
-          <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 border-2 border-amber-200/60 dark:border-amber-800/60 rounded-2xl px-8 py-4 shadow-sm">
+          <div className="bg-white border-2 border-ds-border-light rounded-2xl px-10 py-5 shadow-card">
             <div className="text-center">
-              <p className="text-xs uppercase tracking-widest text-amber-600 dark:text-amber-400 font-medium">
+              <p className="text-xs uppercase tracking-wider text-ds-text-muted font-medium">
                 {month} {year}
               </p>
-              <p className="text-5xl font-light text-amber-800 dark:text-amber-200 my-1">
+              <p className="text-6xl font-handwriting font-bold text-ds-accent-primary my-2">
                 {day}
               </p>
-              <p className="text-sm text-amber-700 dark:text-amber-300">
+              <p className="text-sm text-ds-text-secondary font-medium">
                 {weekday}
               </p>
             </div>
           </div>
           {/* Decorative pin */}
-          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-red-400 dark:bg-red-500 rounded-full shadow-md border-2 border-red-300 dark:border-red-400" />
+          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-red-400 rounded-full shadow-md border-2 border-red-300" />
         </div>
       </div>
 
@@ -209,30 +209,30 @@ export function DiaryEditor({
       {/* Inspiration Hint (Free Mode only) */}
       {mode === "free" && (
         <div className="mb-6">
-          <div className="bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200/50 dark:border-blue-800/50 rounded-xl p-4">
+          <div className="bg-ds-bg-secondary border-2 border-ds-border-light rounded-xl p-4 shadow-sm">
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
-                <Lightbulb className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <div className="p-2 bg-ds-pastel-yellow/40 rounded-lg border border-ds-pastel-yellow">
+                <Lightbulb className="h-5 w-5 text-ds-accent-primary" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-blue-700 dark:text-blue-400">
-                    💡 오늘의 영감
+                  <span className="text-sm font-medium text-ds-text-secondary">
+                    오늘의 주제
                   </span>
                   <button
                     onClick={changeInspiration}
                     disabled={isShuffling}
-                    className="text-xs text-blue-600 dark:text-blue-500 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1 transition-colors disabled:opacity-40"
+                    className="text-xs text-ds-accent-primary hover:text-ds-accent-hover flex items-center gap-1 transition-smooth disabled:opacity-40 font-medium"
                   >
                     <RotateCw className={`h-3 w-3 ${isShuffling ? "animate-spin" : ""}`} />
-                    다른 영감 보기
+                    다른 주제 찾기
                   </button>
                 </div>
-                <p className={`text-blue-900 dark:text-blue-100 font-medium transition-opacity ${isShuffling ? "opacity-50" : "opacity-100"}`}>
+                <p className={`text-ds-text-primary font-semibold text-base transition-opacity ${isShuffling ? "opacity-50" : "opacity-100"}`}>
                   {selectedPrompt?.title || "오늘 하루 어땠나요?"}
                 </p>
-                <p className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-2">
-                  * 이 영감을 따라도 되고, 자유롭게 쓰셔도 됩니다
+                <p className="text-xs text-ds-text-muted mt-2">
+                  AI 정확성 향상을 위해, 저희에게 프롬프트를 주세요
                 </p>
               </div>
             </div>
@@ -287,10 +287,10 @@ export function DiaryEditor({
 
       {/* Footer */}
       <div className="flex justify-between items-center mt-4 px-1">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-ds-text-muted">
           {text.length > 0 && <span>{text.length}자</span>}
         </p>
-        <p className="text-xs text-muted-foreground">⌘ + Enter</p>
+        <p className="text-xs text-ds-text-muted">⌘ + Enter</p>
       </div>
 
       {/* Submit Button */}
@@ -299,16 +299,16 @@ export function DiaryEditor({
           onClick={handleSubmit}
           disabled={!text.trim() || isLoading}
           size="lg"
-          className="px-10 gap-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/25"
+          className="px-12 py-6 gap-2 rounded-full bg-ds-accent-primary hover:bg-ds-accent-hover text-white shadow-card font-medium"
         >
           {isLoading ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-5 w-5 animate-spin" />
               교정 중...
             </>
           ) : (
             <>
-              <Pencil className="h-4 w-4" />
+              <Pencil className="h-5 w-5" />
               교정받기
             </>
           )}
@@ -316,7 +316,7 @@ export function DiaryEditor({
       </div>
 
       {/* Encouragement */}
-      <p className="text-center text-sm text-muted-foreground mt-5">
+      <p className="text-center text-sm text-ds-text-muted mt-5">
         틀려도 괜찮아요! 매일 쓰는 게 중요해요 ✨
       </p>
     </div>

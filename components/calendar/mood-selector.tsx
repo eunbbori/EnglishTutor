@@ -25,9 +25,9 @@ interface MoodSelectorProps {
 
 export function MoodSelector({ selectedMood, onSelect, disabled }: MoodSelectorProps) {
   return (
-    <div className="flex flex-col gap-2">
-      <label className="text-sm text-muted-foreground">오늘의 기분은?</label>
-      <div className="flex gap-2 flex-wrap">
+    <div className="flex flex-col gap-3 w-full">
+      <label className="text-sm text-ds-text-secondary font-medium">오늘의 기분은?</label>
+      <div className="flex gap-2 flex-wrap justify-center">
         {MOODS.map((mood) => (
           <button
             key={mood.id}
@@ -35,17 +35,17 @@ export function MoodSelector({ selectedMood, onSelect, disabled }: MoodSelectorP
             onClick={() => onSelect(mood.id)}
             disabled={disabled}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all",
-              "hover:border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30",
+              "flex flex-col items-center gap-1 px-4 py-2.5 rounded-full border-2 transition-smooth shadow-sm",
+              "hover:border-ds-pastel-yellow hover:bg-ds-pastel-yellow/30",
               "disabled:opacity-50 disabled:cursor-not-allowed",
               selectedMood === mood.id
-                ? "border-amber-400 bg-amber-100 dark:bg-amber-900/40"
-                : "border-border bg-background"
+                ? "border-ds-pastel-yellow bg-ds-pastel-yellow/50 shadow-md scale-105"
+                : "border-ds-border-light bg-white"
             )}
             title={mood.label}
           >
-            <span className="text-lg">{mood.emoji}</span>
-            <span className="text-xs text-muted-foreground">{mood.label}</span>
+            <span className="text-xl">{mood.emoji}</span>
+            <span className="text-xs text-ds-text-secondary font-medium">{mood.label}</span>
           </button>
         ))}
       </div>
