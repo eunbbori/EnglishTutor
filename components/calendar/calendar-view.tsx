@@ -120,20 +120,20 @@ export function CalendarView({ onWriteToday }: CalendarViewProps) {
   }
 
   return (
-    <div className="w-full max-w-md mx-auto">
+    <div className="w-full max-w-2xl mx-auto">
       {/* Calendar Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
             onClick={handlePreviousMonth}
             aria-label="이전 달"
-            className="hover:bg-ds-bg-secondary text-ds-text-primary"
+            className="hover:bg-ds-bg-secondary text-ds-text-primary h-10 w-10"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="h-6 w-6" />
           </Button>
-          <h2 className="font-handwriting text-2xl font-bold min-w-[140px] text-center text-ds-text-primary">
+          <h2 className="font-handwriting text-3xl font-bold min-w-[180px] text-center text-ds-text-primary">
             {getMonthNameEnglish(month)} {year}
           </h2>
           <Button
@@ -142,27 +142,27 @@ export function CalendarView({ onWriteToday }: CalendarViewProps) {
             onClick={handleNextMonth}
             disabled={!canGoNext}
             aria-label="다음 달"
-            className="hover:bg-ds-bg-secondary text-ds-text-primary disabled:opacity-40"
+            className="hover:bg-ds-bg-secondary text-ds-text-primary disabled:opacity-40 h-10 w-10"
           >
-            <ChevronRight className="h-5 w-5" />
+            <ChevronRight className="h-6 w-6" />
           </Button>
         </div>
         <Button
           onClick={onWriteToday}
-          size="sm"
-          className="bg-ds-accent-primary hover:bg-ds-accent-hover text-white shadow-card rounded-full gap-1"
+          size="default"
+          className="bg-ds-accent-primary hover:bg-ds-accent-hover text-white shadow-card rounded-full gap-2 px-6 py-5 text-base font-semibold"
         >
-          <PenLine className="h-4 w-4" />
+          <PenLine className="h-5 w-5" />
           오늘 쓰기
         </Button>
       </div>
 
       {/* Weekday Headers */}
-      <div className="grid grid-cols-7 gap-1 mb-2">
+      <div className="grid grid-cols-7 gap-2 mb-3">
         {WEEKDAYS.map((day) => (
           <div
             key={day}
-            className="text-center text-xs font-medium text-ds-text-secondary py-1"
+            className="text-center text-sm font-semibold text-ds-text-primary py-2"
           >
             {day}
           </div>
@@ -170,13 +170,13 @@ export function CalendarView({ onWriteToday }: CalendarViewProps) {
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-3">
         {isLoading ? (
           // Loading skeleton
           Array.from({ length: 35 }).map((_, i) => (
             <div
               key={`skeleton-${i}`}
-              className="aspect-square w-full rounded-full bg-ds-bg-secondary/40 animate-pulse"
+              className="aspect-square w-full rounded-full bg-ds-bg-secondary/40 animate-pulse border-[3px] border-ds-border-light"
             />
           ))
         ) : (
@@ -185,13 +185,13 @@ export function CalendarView({ onWriteToday }: CalendarViewProps) {
       </div>
 
       {/* Heatmap Legend */}
-      <div className="flex items-center justify-end gap-2 mt-4 text-xs text-ds-text-muted">
+      <div className="flex items-center justify-end gap-3 mt-6 text-sm text-ds-text-secondary font-medium">
         <span>적음</span>
-        <div className="flex gap-0.5">
-          <div className="w-3 h-3 rounded-full bg-ds-pastel-yellow/40 border border-ds-pastel-yellow" />
-          <div className="w-3 h-3 rounded-full bg-ds-pastel-mint/50 border border-ds-pastel-mint" />
-          <div className="w-3 h-3 rounded-full bg-ds-pastel-coral/50 border border-ds-pastel-coral" />
-          <div className="w-3 h-3 rounded-full bg-ds-pastel-lavender/60 border border-ds-pastel-lavender" />
+        <div className="flex gap-1">
+          <div className="w-4 h-4 rounded-full bg-ds-pastel-yellow/40 border-2 border-ds-pastel-yellow" />
+          <div className="w-4 h-4 rounded-full bg-ds-pastel-mint/50 border-2 border-ds-pastel-mint" />
+          <div className="w-4 h-4 rounded-full bg-ds-pastel-coral/50 border-2 border-ds-pastel-coral" />
+          <div className="w-4 h-4 rounded-full bg-ds-pastel-lavender/60 border-2 border-ds-pastel-lavender" />
         </div>
         <span>많음</span>
       </div>

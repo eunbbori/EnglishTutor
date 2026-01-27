@@ -45,23 +45,21 @@ export function CalendarDay({
     <button
       onClick={() => onClick?.(date, entry)}
       className={cn(
-        "relative aspect-square w-full rounded-full border-2 transition-smooth",
-        "flex flex-col items-center justify-center gap-0.5",
-        "shadow-sm hover:shadow-md",
-        "focus:outline-none focus:ring-2 focus:ring-ds-accent-primary focus:ring-offset-1",
+        "relative aspect-square w-full rounded-full border-[3px] transition-smooth",
+        "flex flex-col items-center justify-center gap-1 py-2",
+        "shadow-md hover:shadow-lg",
+        "focus:outline-none focus:ring-2 focus:ring-ds-accent-primary focus:ring-offset-2",
         heatmapColor,
-        isTodayDate && "ring-2 ring-ds-accent-primary ring-offset-2 shadow-md",
+        isTodayDate && "ring-[3px] ring-ds-accent-primary ring-offset-2 shadow-lg scale-105",
         !isCurrentMonth && "opacity-40",
-        entry ? "cursor-pointer hover:scale-105" : "cursor-default",
-        // 마스킹 테이프 효과 (엔트리가 있을 때)
-        entry && heatmapLevel > 0 && "masking-tape"
+        entry ? "cursor-pointer hover:scale-110" : "cursor-default",
       )}
       disabled={!isCurrentMonth}
       aria-label={`${date}${entry ? ", 일기 있음" : ""}`}
     >
       {/* Mood emoji (top-right corner) */}
       {moodEmoji && (
-        <span className="absolute -top-1 -right-1 text-base leading-none z-10">
+        <span className="absolute -top-2 -right-2 text-xl leading-none z-10 bg-white rounded-full p-0.5 shadow-sm">
           {moodEmoji}
         </span>
       )}
@@ -69,8 +67,8 @@ export function CalendarDay({
       {/* Day number */}
       <span
         className={cn(
-          "text-sm font-medium",
-          isTodayDate ? "text-ds-accent-primary font-semibold" : "text-ds-text-primary",
+          "text-xl font-bold",
+          isTodayDate ? "text-ds-accent-primary font-extrabold text-2xl" : "text-ds-text-primary",
           !isCurrentMonth && "text-ds-text-muted"
         )}
       >
@@ -79,7 +77,7 @@ export function CalendarDay({
 
       {/* Keyword preview (if available) */}
       {entry?.keywords && entry.keywords.length > 0 && (
-        <span className="text-[9px] text-ds-text-muted truncate max-w-full px-0.5">
+        <span className="text-[10px] text-ds-text-secondary truncate max-w-full px-1 font-medium">
           {entry.keywords[0]}
         </span>
       )}
@@ -95,7 +93,7 @@ export function EmptyDayCell({ className }: EmptyDayCellProps) {
   return (
     <div
       className={cn(
-        "aspect-square w-full rounded-full bg-ds-bg-secondary/20",
+        "aspect-square w-full rounded-full bg-ds-bg-secondary/30 border-[3px] border-ds-border-light/40",
         className
       )}
     />
