@@ -8,7 +8,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sparkles, Send, Loader2, ChevronDown, X, Pencil, RotateCw, Lightbulb } from "lucide-react";
+import {
+  Sparkles,
+  Send,
+  Loader2,
+  ChevronDown,
+  X,
+  Pencil,
+  RotateCw,
+  Lightbulb,
+} from "lucide-react";
 import { MoodSelector } from "@/components/calendar/mood-selector";
 import { ModeSelector, DiaryMode } from "./mode-selector";
 import { DailyMission } from "./daily-mission";
@@ -23,7 +32,11 @@ export interface DiaryPrompt {
 interface DiaryEditorProps {
   prompts: DiaryPrompt[];
   defaultPromptId?: string;
-  onSubmit: (text: string, promptId: string | null, mood: string | null) => void;
+  onSubmit: (
+    text: string,
+    promptId: string | null,
+    mood: string | null,
+  ) => void;
   isLoading?: boolean;
 }
 
@@ -44,7 +57,7 @@ export function DiaryEditor({
   const [text, setText] = useState("");
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [selectedPrompt, setSelectedPrompt] = useState<DiaryPrompt | null>(
-    prompts.find((p) => p.id === defaultPromptId) || prompts[0] || null
+    prompts.find((p) => p.id === defaultPromptId) || prompts[0] || null,
   );
   const [shuffleCount, setShuffleCount] = useState(0);
   const [isShuffling, setIsShuffling] = useState(false);
@@ -52,7 +65,8 @@ export function DiaryEditor({
 
   // Get today's word for challenge mode
   const todayWord = getTodayWord();
-  const wordUsed = mode === "challenge" ? checkWordUsage(text, todayWord.word) : false;
+  const wordUsed =
+    mode === "challenge" ? checkWordUsage(text, todayWord.word) : false;
 
   // Load shuffle count from localStorage on mount
   useEffect(() => {
@@ -87,7 +101,9 @@ export function DiaryEditor({
   // Ensure selectedPrompt is always set
   useEffect(() => {
     if (!selectedPrompt && prompts.length > 0) {
-      setSelectedPrompt(prompts.find((p) => p.id === defaultPromptId) || prompts[0]);
+      setSelectedPrompt(
+        prompts.find((p) => p.id === defaultPromptId) || prompts[0],
+      );
     }
   }, [selectedPrompt, prompts, defaultPromptId]);
 
@@ -113,7 +129,8 @@ export function DiaryEditor({
 
     // Get a random prompt different from current one
     const availablePrompts = prompts.filter((p) => p.id !== selectedPrompt?.id);
-    const randomPrompt = availablePrompts[Math.floor(Math.random() * availablePrompts.length)];
+    const randomPrompt =
+      availablePrompts[Math.floor(Math.random() * availablePrompts.length)];
 
     // Animate and update
     setTimeout(() => {
@@ -130,7 +147,8 @@ export function DiaryEditor({
 
     // Get a random prompt different from current one
     const availablePrompts = prompts.filter((p) => p.id !== selectedPrompt.id);
-    const randomPrompt = availablePrompts[Math.floor(Math.random() * availablePrompts.length)];
+    const randomPrompt =
+      availablePrompts[Math.floor(Math.random() * availablePrompts.length)];
 
     // Animate and update
     setTimeout(() => {
@@ -160,7 +178,10 @@ export function DiaryEditor({
       return `Try to use the word "${todayWord.word}" naturally in your writing. Write about anything you want...`;
     }
     // Free mode - always show inspiration hint placeholder
-    return selectedPrompt?.placeholder || "How was your day? Write about what happened today...";
+    return (
+      selectedPrompt?.placeholder ||
+      "How was your day? Write about what happened today..."
+    );
   };
 
   return (
@@ -225,17 +246,21 @@ export function DiaryEditor({
                     className="text-[11px] sm:text-xs text-ds-accent-primary hover:text-ds-accent-hover active:text-ds-accent-hover flex items-center gap-1 transition-smooth disabled:opacity-40 font-medium touch-manipulation min-h-[44px] -my-2"
                     aria-label="다른 주제 찾기"
                   >
-                    <RotateCw className={`h-3 w-3 ${isShuffling ? "animate-spin" : ""}`} />
+                    <RotateCw
+                      className={`h-3 w-3 ${isShuffling ? "animate-spin" : ""}`}
+                    />
                     <span className="hidden xs:inline">다른 주제 찾기</span>
                     <span className="xs:hidden">변경</span>
                   </button>
                 </div>
-                <p className={`text-ds-text-primary font-semibold text-sm sm:text-base transition-opacity ${isShuffling ? "opacity-50" : "opacity-100"} leading-snug`}>
+                <p
+                  className={`text-ds-text-primary font-semibold text-sm sm:text-base transition-opacity ${isShuffling ? "opacity-50" : "opacity-100"} leading-snug`}
+                >
                   {selectedPrompt?.title || "오늘 하루 어땠나요?"}
                 </p>
-                <p className="text-[11px] sm:text-xs text-ds-text-muted mt-1.5 sm:mt-2 leading-relaxed">
-                  AI 정확성 향상을 위해, 저희에게 프롬프트를 주세요
-                </p>
+                {/* <p className="text-[11px] sm:text-xs text-ds-text-muted mt-1.5 sm:mt-2 leading-relaxed">
+                  주제 상관없이 자유롭게 쓰셔도 돼요!
+                </p> */}
               </div>
             </div>
           </div>
@@ -248,7 +273,8 @@ export function DiaryEditor({
         <div
           className="bg-[#fffef9] dark:bg-[#1c1917] rounded-xl sm:rounded-2xl shadow-lg overflow-hidden"
           style={{
-            boxShadow: "0 4px 24px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
+            boxShadow:
+              "0 4px 24px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
           }}
         >
           {/* Red margin line - Responsive */}
@@ -292,7 +318,9 @@ export function DiaryEditor({
         <p className="text-xs sm:text-sm text-ds-text-muted">
           {text.length > 0 && <span>{text.length}자</span>}
         </p>
-        <p className="text-[11px] sm:text-xs text-ds-text-muted hidden sm:block">⌘ + Enter</p>
+        <p className="text-[11px] sm:text-xs text-ds-text-muted hidden sm:block">
+          ⌘ + Enter
+        </p>
       </div>
 
       {/* Submit Button - HIG: Prominent CTA with adequate touch target */}
