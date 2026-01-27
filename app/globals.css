@@ -10,34 +10,34 @@
 
 @layer base {
   :root {
-    /* Design System Colors - 레퍼런스 디자인 기반 */
-    --background: 35 28% 95%;        /* #F5F1E8 베이지/크림 */
-    --foreground: 25 36% 19%;        /* #3D2E1F 다크 브라운 */
+    /* Design System Colors - Vintage Scrapbook 기반 (Refer4_2.png) */
+    --background: 35 28% 88%;        /* #E8DFD0 빈티지 베이지 */
+    --foreground: 25 33% 22%;        /* #4A3728 다크 브라운 */
 
-    --card: 0 0% 100%;               /* #FFFFFF 화이트 카드 */
-    --card-foreground: 25 36% 19%;   /* #3D2E1F */
+    --card: 35 28% 95%;              /* #F5F1E8 오래된 종이색 */
+    --card-foreground: 25 33% 22%;   /* #4A3728 */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 25 36% 19%;
+    --popover: 35 28% 95%;
+    --popover-foreground: 25 33% 22%;
 
-    --primary: 25 27% 59%;           /* #B8917B 브라운/테라코타 */
+    --primary: 20 29% 49%;           /* #A0725B 브라운 */
     --primary-foreground: 0 0% 100%; /* 화이트 텍스트 */
 
-    --secondary: 25 36% 88%;         /* #E8DFD0 어두운 베이지 */
-    --secondary-foreground: 25 36% 19%;
+    --secondary: 35 28% 77%;         /* #D4C5B0 빈티지 베이지 */
+    --secondary-foreground: 25 33% 22%;
 
-    --muted: 25 36% 88%;             /* #E8DFD0 */
-    --muted-foreground: 25 17% 54%;  /* #9B8B7E 라이트 브라운 */
+    --muted: 35 28% 77%;             /* #D4C5B0 */
+    --muted-foreground: 25 20% 54%;  /* #A08A76 빈티지 브라운 */
 
-    --accent: 25 27% 59%;            /* #B8917B 브라운 강조 */
+    --accent: 20 29% 49%;            /* #A0725B 브라운 강조 */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 47% 66%;        /* #D97777 에러 레드 */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 30 28% 81%;            /* #E8DFD0 테두리 */
-    --input: 30 28% 81%;             /* #E8DFD0 입력 필드 */
-    --ring: 25 27% 59%;              /* #B8917B 포커스 링 */
+    --border: 35 28% 77%;            /* #D4C5B0 테두리 */
+    --input: 35 28% 77%;             /* #D4C5B0 입력 필드 */
+    --ring: 20 29% 49%;              /* #A0725B 포커스 링 */
 
     --radius: 0.75rem;               /* 12px - 기본 radius */
   }
@@ -93,13 +93,13 @@
 @layer utilities {
   /* Design System 유틸리티 클래스 */
 
-  /* 배경 색상 */
+  /* 배경 색상 - Vintage Scrapbook */
   .bg-ds-primary {
-    background-color: #F5F1E8;
+    background-color: #E8DFD0;
   }
 
   .bg-ds-secondary {
-    background-color: #E8DFD0;
+    background-color: #D4C5B0;
   }
 
   /* 마스킹 테이프 스타일 */
@@ -157,15 +157,15 @@
     );
   }
 
-  /* 찢어진 종이 효과 (Vintage Scrapbook) */
+  /* 찢어진 종이 효과 (Vintage Scrapbook) - Refer4_2.png */
   .torn-paper {
     position: relative;
-    background: linear-gradient(to bottom, #F5F1E8 0%, #EDE8DC 100%);
+    background: linear-gradient(to bottom, #F5F1E8 0%, #EBE4D8 100%);
     box-shadow:
-      0 2px 4px rgba(61, 46, 31, 0.1),
-      0 4px 8px rgba(61, 46, 31, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 0.5);
-    filter: drop-shadow(1px 2px 3px rgba(61, 46, 31, 0.15));
+      0 2px 4px rgba(74, 55, 40, 0.12),
+      0 4px 8px rgba(74, 55, 40, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    filter: drop-shadow(1px 2px 3px rgba(74, 55, 40, 0.18));
   }
 
   .torn-paper::before {
@@ -179,8 +179,8 @@
       90deg,
       transparent 0px,
       transparent 3px,
-      rgba(61, 46, 31, 0.05) 3px,
-      rgba(61, 46, 31, 0.05) 6px
+      rgba(74, 55, 40, 0.06) 3px,
+      rgba(74, 55, 40, 0.06) 6px
     );
   }
 
@@ -195,23 +195,23 @@
       90deg,
       transparent 0px,
       transparent 4px,
-      rgba(61, 46, 31, 0.05) 4px,
-      rgba(61, 46, 31, 0.05) 7px
+      rgba(74, 55, 40, 0.06) 4px,
+      rgba(74, 55, 40, 0.06) 7px
     );
   }
 
-  /* 빈티지 배경 */
+  /* 빈티지 배경 - Refer4_2.png 스타일 */
   .vintage-bg {
     background: linear-gradient(
       135deg,
-      #E8DFD0 0%,
-      #D4C5B0 50%,
-      #C9B89A 100%
+      #D4C5B0 0%,
+      #C9B89A 50%,
+      #BEA888 100%
     );
     background-image:
-      radial-gradient(circle at 20% 50%, rgba(61, 46, 31, 0.03) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(139, 117, 87, 0.03) 0%, transparent 50%),
-      linear-gradient(135deg, #E8DFD0 0%, #D4C5B0 50%, #C9B89A 100%);
+      radial-gradient(circle at 20% 50%, rgba(74, 55, 40, 0.04) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(160, 114, 91, 0.04) 0%, transparent 50%),
+      linear-gradient(135deg, #D4C5B0 0%, #C9B89A 50%, #BEA888 100%);
   }
 
   /* 핀/클립 장식 */
