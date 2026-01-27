@@ -76,9 +76,9 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
 
   if (status === "loading" || isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-amber-50/30 to-background dark:from-amber-950/10 flex items-center justify-center">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-ds-bg-primary flex items-center justify-center">
+        <div className="flex items-center gap-2 text-ds-text-secondary">
+          <div className="w-5 h-5 border-2 border-ds-accent-primary border-t-transparent rounded-full animate-spin" />
           불러오는 중...
         </div>
       </div>
@@ -87,9 +87,9 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
 
   if (error || !entry) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-amber-50/30 to-background dark:from-amber-950/10 flex items-center justify-center">
+      <div className="min-h-screen bg-ds-bg-primary flex items-center justify-center">
         <div className="text-center">
-          <p className="text-muted-foreground mb-4">{error || "일기를 찾을 수 없습니다"}</p>
+          <p className="text-ds-text-secondary mb-4">{error || "일기를 찾을 수 없습니다"}</p>
           <Button asChild variant="outline">
             <Link href="/history">목록으로 돌아가기</Link>
           </Button>
@@ -101,161 +101,200 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
   const date = formatDate(entry.createdAt);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50/30 to-background dark:from-amber-950/10">
+    <div className="min-h-screen bg-ds-bg-primary relative">
+      {/* Notebook binding (left side) */}
+      <div className="fixed left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-amber-900/10 to-transparent pointer-events-none z-0">
+        <div className="flex flex-col items-center gap-12 pt-20">
+          <div className="w-4 h-4 rounded-full bg-zinc-300 shadow-inner" />
+          <div className="w-4 h-4 rounded-full bg-zinc-300 shadow-inner" />
+          <div className="w-4 h-4 rounded-full bg-zinc-300 shadow-inner" />
+          <div className="w-4 h-4 rounded-full bg-zinc-300 shadow-inner" />
+          <div className="w-4 h-4 rounded-full bg-zinc-300 shadow-inner" />
+        </div>
+      </div>
+
       {/* Header */}
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="max-w-3xl mx-auto px-4 py-3">
+      <header className="border-b border-ds-border-light bg-white/95 backdrop-blur sticky top-0 z-50 shadow-sm">
+        <div className="max-w-4xl mx-auto px-4 py-4 md:px-8">
           <div className="flex items-center justify-between">
-            <Link
-              href="/history"
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="text-sm">목록으로</span>
-            </Link>
+            {/* Left: Back button + Date */}
+            <div className="flex items-center gap-4">
+              <Link
+                href="/history"
+                className="flex items-center gap-2 text-ds-text-secondary hover:text-ds-text-primary transition-smooth"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="text-sm">기록</span>
+              </Link>
+              {/* Small date badge */}
+              <div className="bg-white border-2 border-ds-border-light rounded-lg px-3 py-1.5 shadow-sm">
+                <div className="text-center">
+                  <p className="text-xs text-ds-text-muted font-medium">
+                    {date.month}
+                  </p>
+                  <p className="text-2xl font-handwriting font-bold text-ds-accent-primary leading-none">
+                    {date.day}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Center: Title */}
+            <h1 className="font-handwriting text-2xl font-bold text-ds-text-primary absolute left-1/2 -translate-x-1/2">
+              Daily English
+            </h1>
+
+            {/* Right: Links */}
             <div className="flex items-center gap-3">
               <Link
                 href="/vocabulary"
-                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1 text-sm text-ds-text-secondary hover:text-ds-text-primary transition-smooth"
               >
                 <Book className="h-4 w-4" />
                 <span className="hidden sm:inline">표현노트</span>
               </Link>
-              <Badge variant="outline" className="gap-1">
-                <CheckCircle2 className="h-3 w-3 text-green-500" />
-                교정 완료
-              </Badge>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto p-4 md:p-8">
-        {/* Date Stamp */}
-        <div className="flex justify-center mb-8">
-          <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 border-2 border-amber-200/60 dark:border-amber-800/60 rounded-2xl px-6 py-3 shadow-sm">
-            <div className="text-center">
-              <p className="text-xs uppercase tracking-widest text-amber-600 dark:text-amber-400 font-medium">
-                {date.month} {date.year}
-              </p>
-              <p className="text-4xl font-light text-amber-800 dark:text-amber-200 my-1">
-                {date.day}
-              </p>
-            </div>
-          </div>
-        </div>
+      <main className="max-w-3xl mx-auto p-4 md:p-8 relative z-10 ml-16">
 
         {/* Original Text */}
-        <section className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
-            <h2 className="text-sm font-medium text-muted-foreground">내가 쓴 일기</h2>
-          </div>
-          <div className="bg-[#fffef9] dark:bg-[#1c1917] rounded-xl p-5 border border-amber-100/50 dark:border-amber-900/30 shadow-sm">
-            <div className="relative pl-4 border-l-2 border-red-200/60 dark:border-red-900/40">
-              <p className="text-lg leading-8 text-zinc-800 dark:text-zinc-200" style={{ fontFamily: "'Georgia', serif" }}>
-                {entry.originalText}
-              </p>
+        <section className="mb-8">
+          <div className="relative">
+            {/* Masking tape */}
+            <div className="absolute -top-3 left-8 w-20 h-6 bg-ds-pastel-yellow/70 rounded-sm shadow-sm transform -rotate-2" />
+
+            <div className="card-diary p-6 relative">
+              <h2 className="text-sm font-medium text-ds-text-muted mb-4 flex items-center gap-2">
+                <span>✏️</span>
+                <span>내가 쓴 일기</span>
+              </h2>
+              <div className="relative pl-4 border-l-2 border-red-200/60">
+                <p className="text-lg leading-8 text-ds-text-primary" style={{ fontFamily: "'Georgia', serif" }}>
+                  {entry.originalText}
+                </p>
+              </div>
             </div>
           </div>
         </section>
 
         {/* Arrow */}
-        <div className="flex justify-center my-4">
-          <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-full">
-            <ArrowRightLeft className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+        <div className="flex justify-center my-6">
+          <div className="p-2 bg-ds-pastel-coral/50 border border-ds-pastel-coral rounded-full shadow-sm">
+            <ArrowRightLeft className="h-5 w-5 text-ds-accent-primary" />
           </div>
         </div>
 
         {/* Corrected Text */}
-        <section className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-            <h2 className="text-sm font-medium text-muted-foreground">교정된 문장</h2>
-          </div>
-          <div className="bg-green-50/50 dark:bg-green-950/20 rounded-xl p-5 border border-green-200/50 dark:border-green-900/30 shadow-sm">
-            <SelectableText sourceType="diary" sourceId={entry.chatId}>
-              <p className="text-lg leading-8 text-green-900 dark:text-green-100" style={{ fontFamily: "'Georgia', serif" }}>
-                {entry.correctedText}
-              </p>
-            </SelectableText>
+        <section className="mb-8">
+          <div className="relative">
+            {/* Masking tape */}
+            <div className="absolute -top-3 right-8 w-20 h-6 bg-ds-pastel-mint/70 rounded-sm shadow-sm transform rotate-2" />
 
-            {/* Visual Hint */}
-            <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-primary/10 border border-primary/20 rounded-lg">
-              <Sparkles className="h-4 w-4 text-primary animate-pulse" />
-              <span className="text-sm font-medium text-primary">
-                💡 텍스트를 드래그하여 표현 노트에 저장하세요
-              </span>
+            <div className="card-diary p-6 relative bg-green-50/30 border-green-200/40">
+              <h2 className="text-sm font-medium text-ds-text-muted mb-4 flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <span>교정된 문장</span>
+              </h2>
+              <SelectableText sourceType="diary" sourceId={entry.chatId}>
+                <p className="text-lg leading-8 text-green-900" style={{ fontFamily: "'Georgia', serif" }}>
+                  {entry.correctedText}
+                </p>
+              </SelectableText>
+
+              {/* Visual Hint */}
+              <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-ds-pastel-yellow/30 border border-ds-pastel-yellow rounded-lg">
+                <Sparkles className="h-4 w-4 text-ds-accent-primary animate-pulse" />
+                <span className="text-sm font-medium text-ds-accent-primary">
+                  텍스트를 드래그하여 표현 노트에 저장하세요
+                </span>
+              </div>
             </div>
           </div>
         </section>
 
         {/* Korean Explanation */}
         {entry.koreanExplanation && (
-          <section className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <Lightbulb className="h-4 w-4 text-amber-500" />
-              <h2 className="text-sm font-medium text-muted-foreground">설명</h2>
-            </div>
-            <div className="bg-amber-50/50 dark:bg-amber-950/20 rounded-xl p-5 border border-amber-200/50 dark:border-amber-900/30">
-              <p className="text-base leading-7 text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
-                {entry.koreanExplanation}
-              </p>
+          <section className="mb-8">
+            <div className="relative">
+              {/* Masking tape */}
+              <div className="absolute -top-3 left-12 w-20 h-6 bg-ds-pastel-coral/70 rounded-sm shadow-sm transform -rotate-1" />
+
+              <div className="card-diary p-6 relative bg-ds-pastel-yellow/10 border-ds-pastel-yellow/40">
+                <h2 className="text-sm font-medium text-ds-text-muted mb-4 flex items-center gap-2">
+                  <Lightbulb className="h-4 w-4 text-ds-accent-primary" />
+                  <span>설명</span>
+                </h2>
+                <p className="text-base leading-7 text-ds-text-primary whitespace-pre-wrap">
+                  {entry.koreanExplanation}
+                </p>
+              </div>
             </div>
           </section>
         )}
 
         {/* Alternatives */}
         {entry.alternatives && entry.alternatives.length > 0 && (
-          <section className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <RefreshCw className="h-4 w-4 text-blue-500" />
-              <h2 className="text-sm font-medium text-muted-foreground">다른 표현</h2>
-            </div>
-            <div className="space-y-3">
-              {entry.alternatives.map((alt, index) => (
-                <div
-                  key={index}
-                  className="bg-blue-50/50 dark:bg-blue-950/20 rounded-xl p-4 border border-blue-200/50 dark:border-blue-900/30"
-                >
-                  <Badge variant="secondary" className="mb-2 text-xs">
-                    {alt.type}
-                  </Badge>
-                  <SelectableText sourceType="diary" sourceId={entry.chatId}>
-                    <p className="text-base text-zinc-700 dark:text-zinc-300" style={{ fontFamily: "'Georgia', serif" }}>
-                      {alt.text}
-                    </p>
-                  </SelectableText>
+          <section className="mb-8">
+            <div className="relative">
+              {/* Masking tape */}
+              <div className="absolute -top-3 right-12 w-20 h-6 bg-ds-pastel-lavender/70 rounded-sm shadow-sm transform rotate-1" />
+
+              <div className="card-diary p-6 relative bg-blue-50/20 border-blue-200/30">
+                <h2 className="text-sm font-medium text-ds-text-muted mb-4 flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4 text-blue-500" />
+                  <span>다른 표현</span>
+                </h2>
+                <div className="space-y-4">
+                  {entry.alternatives.map((alt, index) => (
+                    <div key={index} className="bg-white/50 rounded-lg p-4 border border-ds-border-light">
+                      <Badge variant="secondary" className="mb-2 text-xs bg-ds-pastel-lavender/50">
+                        {alt.type}
+                      </Badge>
+                      <SelectableText sourceType="diary" sourceId={entry.chatId}>
+                        <p className="text-base text-ds-text-primary" style={{ fontFamily: "'Georgia', serif" }}>
+                          {alt.text}
+                        </p>
+                      </SelectableText>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
           </section>
         )}
 
         {/* Insight */}
         {entry.insight && (
-          <section className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-base">💡</span>
-              <h2 className="text-sm font-medium text-muted-foreground">오늘의 팁</h2>
-            </div>
-            <div className="bg-purple-50/50 dark:bg-purple-950/20 rounded-xl p-5 border border-purple-200/50 dark:border-purple-900/30">
-              <p className="text-base leading-7 text-zinc-700 dark:text-zinc-300">
-                {entry.insight}
-              </p>
+          <section className="mb-8">
+            <div className="relative">
+              {/* Masking tape */}
+              <div className="absolute -top-3 left-16 w-20 h-6 bg-ds-pastel-pink/70 rounded-sm shadow-sm transform -rotate-2" />
+
+              <div className="card-diary p-6 relative bg-purple-50/20 border-purple-200/30">
+                <h2 className="text-sm font-medium text-ds-text-muted mb-4 flex items-center gap-2">
+                  <span className="text-base">💡</span>
+                  <span>오늘의 팁</span>
+                </h2>
+                <p className="text-base leading-7 text-ds-text-primary">
+                  {entry.insight}
+                </p>
+              </div>
             </div>
           </section>
         )}
 
         {/* Footer Actions */}
-        <div className="flex justify-center gap-3 pt-6 border-t border-zinc-200 dark:border-zinc-800">
-          <Button asChild variant="outline" className="rounded-full">
+        <div className="flex justify-center gap-3 pt-6 border-t border-ds-border-light">
+          <Button asChild variant="outline" className="rounded-full border-2 border-ds-border-default hover:bg-ds-bg-secondary">
             <Link href="/history">
               <ArrowLeft className="h-4 w-4 mr-2" />
               목록으로
             </Link>
           </Button>
-          <Button asChild className="rounded-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600">
+          <Button asChild className="rounded-full bg-ds-accent-primary hover:bg-ds-accent-hover text-white shadow-card">
             <Link href="/">
               새 일기 쓰기
               <ArrowRight className="h-4 w-4 ml-2" />
