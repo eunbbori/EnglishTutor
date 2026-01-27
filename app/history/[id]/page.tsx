@@ -103,19 +103,19 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
   return (
     <div className="min-h-screen bg-ds-bg-primary relative">
       {/* Notebook binding (left side) */}
-      <div className="fixed left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-amber-900/10 to-transparent pointer-events-none z-0">
-        <div className="flex flex-col items-center gap-12 pt-20">
-          <div className="w-4 h-4 rounded-full bg-zinc-300 shadow-inner" />
-          <div className="w-4 h-4 rounded-full bg-zinc-300 shadow-inner" />
-          <div className="w-4 h-4 rounded-full bg-zinc-300 shadow-inner" />
-          <div className="w-4 h-4 rounded-full bg-zinc-300 shadow-inner" />
-          <div className="w-4 h-4 rounded-full bg-zinc-300 shadow-inner" />
+      <div className="fixed left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-amber-900/10 to-transparent pointer-events-none z-0">
+        <div className="flex flex-col items-center gap-16 pt-24">
+          <div className="w-3 h-3 rounded-full bg-zinc-300 shadow-inner" />
+          <div className="w-3 h-3 rounded-full bg-zinc-300 shadow-inner" />
+          <div className="w-3 h-3 rounded-full bg-zinc-300 shadow-inner" />
+          <div className="w-3 h-3 rounded-full bg-zinc-300 shadow-inner" />
+          <div className="w-3 h-3 rounded-full bg-zinc-300 shadow-inner" />
         </div>
       </div>
 
       {/* Header */}
       <header className="border-b border-ds-border-light bg-white/95 backdrop-blur sticky top-0 z-50 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-4 md:px-8">
+        <div className="max-w-5xl mx-auto px-4 py-4 md:px-8">
           <div className="flex items-center justify-between">
             {/* Left: Back button + Date */}
             <div className="flex items-center gap-4">
@@ -158,7 +158,7 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto p-4 md:p-8 relative z-10 ml-16">
+      <main className="max-w-4xl mx-auto p-4 md:p-8 relative z-10">
 
         {/* Original Text */}
         <section className="mb-8">
