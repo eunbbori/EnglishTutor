@@ -45,39 +45,41 @@ export function CalendarDay({
     <button
       onClick={() => onClick?.(date, entry)}
       className={cn(
-        "relative aspect-square w-full rounded-full border-[3px] transition-smooth",
-        "flex flex-col items-center justify-center gap-1 py-2",
-        "shadow-md hover:shadow-lg",
-        "focus:outline-none focus:ring-2 focus:ring-ds-accent-primary focus:ring-offset-2",
+        // HIG: Minimum 44pt touch target, responsive sizing
+        "relative aspect-square w-full min-h-[44px] rounded-full border-2 sm:border-[3px] transition-smooth",
+        "flex flex-col items-center justify-center gap-0.5 sm:gap-1 py-1.5 sm:py-2",
+        "shadow-sm sm:shadow-md hover:shadow-md sm:hover:shadow-lg active:shadow-lg",
+        "focus:outline-none focus:ring-2 focus:ring-ds-accent-primary focus:ring-offset-1 sm:focus:ring-offset-2",
+        "touch-manipulation", // HIG: Optimize for touch
         heatmapColor,
-        isTodayDate && "ring-[3px] ring-ds-accent-primary ring-offset-2 shadow-lg scale-105",
+        isTodayDate && "ring-2 sm:ring-[3px] ring-ds-accent-primary ring-offset-1 sm:ring-offset-2 shadow-md sm:shadow-lg scale-[1.02] sm:scale-105",
         !isCurrentMonth && "opacity-40",
-        entry ? "cursor-pointer hover:scale-110" : "cursor-default",
+        entry ? "cursor-pointer active:scale-95 sm:hover:scale-110" : "cursor-default",
       )}
       disabled={!isCurrentMonth}
       aria-label={`${date}${entry ? ", 일기 있음" : ""}`}
     >
-      {/* Mood emoji (top-right corner) */}
+      {/* Mood emoji - Responsive size */}
       {moodEmoji && (
-        <span className="absolute -top-2 -right-2 text-xl leading-none z-10 bg-white rounded-full p-0.5 shadow-sm">
+        <span className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 text-base sm:text-xl leading-none z-10 bg-white rounded-full p-0.5 shadow-sm">
           {moodEmoji}
         </span>
       )}
 
-      {/* Day number */}
+      {/* Day number - Responsive typography */}
       <span
         className={cn(
-          "text-xl font-bold",
-          isTodayDate ? "text-ds-accent-primary font-extrabold text-2xl" : "text-ds-text-primary",
+          "text-base sm:text-lg md:text-xl font-bold leading-none",
+          isTodayDate ? "text-ds-accent-primary font-extrabold text-lg sm:text-xl md:text-2xl" : "text-ds-text-primary",
           !isCurrentMonth && "text-ds-text-muted"
         )}
       >
         {day}
       </span>
 
-      {/* Keyword preview (if available) */}
+      {/* Keyword preview - Hide on very small screens */}
       {entry?.keywords && entry.keywords.length > 0 && (
-        <span className="text-[10px] text-ds-text-secondary truncate max-w-full px-1 font-medium">
+        <span className="hidden xs:block text-[9px] sm:text-[10px] text-ds-text-secondary truncate max-w-full px-0.5 sm:px-1 font-medium leading-tight">
           {entry.keywords[0]}
         </span>
       )}

@@ -102,6 +102,29 @@
     background-color: #D4C5B0;
   }
 
+  /* iOS Safe Area Support - Apple HIG */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Touch Manipulation - Optimized for touch */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   /* 마스킹 테이프 스타일 */
   .masking-tape {
     position: relative;

@@ -221,75 +221,92 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col bg-ds-bg-primary">
-      {/* Header */}
-      <header className="border-b border-ds-border-light bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <PenLine className="h-5 w-5 text-ds-accent-primary" />
-              <h1 className="font-handwriting text-2xl font-bold text-ds-text-primary">Daily English</h1>
+      {/* Header - Responsive with HIG touch targets */}
+      <header className="border-b border-ds-border-light bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 sticky top-0 z-50 shadow-sm safe-top">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-3">
+          <div className="flex items-center justify-between gap-2">
+            {/* Logo/Title - Responsive */}
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <PenLine className="h-4 w-4 sm:h-5 sm:w-5 text-ds-accent-primary flex-shrink-0" />
+              <h1 className="font-handwriting text-lg sm:text-xl lg:text-2xl font-bold text-ds-text-primary truncate">
+                Daily English
+              </h1>
             </div>
-            <div className="flex items-center gap-3">
-              {/* Streak Badge */}
+
+            {/* Navigation - Responsive with HIG 44pt touch targets */}
+            <div className="flex items-center gap-1 sm:gap-2 lg:gap-3">
+              {/* Streak Badge - Hide on very small screens */}
               {streak > 0 && (
-                <Badge variant="secondary" className="gap-1 bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200">
+                <Badge variant="secondary" className="hidden xs:flex gap-1 bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200 text-xs px-2 py-0.5">
                   <Flame className="h-3 w-3 text-orange-500" />
-                  {streak}일
+                  <span className="hidden sm:inline">{streak}일</span>
+                  <span className="sm:hidden">{streak}</span>
                 </Badge>
               )}
-              {/* Calendar/Write Toggle */}
+
+              {/* Calendar/Write Toggle - HIG touch target */}
               {viewMode !== "result" && (
                 <button
                   onClick={() => setViewMode(viewMode === "calendar" ? "write" : "calendar")}
-                  className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground active:text-foreground transition-colors min-h-[44px] min-w-[44px] justify-center touch-manipulation"
+                  aria-label={viewMode === "calendar" ? "일기 쓰기" : "달력 보기"}
                 >
                   {viewMode === "calendar" ? (
                     <>
-                      <PenLine className="h-4 w-4" />
-                      <span className="hidden sm:inline">쓰기</span>
+                      <PenLine className="h-5 w-5 sm:h-4 sm:w-4" />
+                      <span className="hidden md:inline">쓰기</span>
                     </>
                   ) : (
                     <>
-                      <Calendar className="h-4 w-4" />
-                      <span className="hidden sm:inline">달력</span>
+                      <Calendar className="h-5 w-5 sm:h-4 sm:w-4" />
+                      <span className="hidden md:inline">달력</span>
                     </>
                   )}
                 </button>
               )}
-              {/* History Link */}
+
+              {/* History Link - HIG touch target */}
               {session?.user && (
                 <Link
                   href="/history"
-                  className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground active:text-foreground transition-colors min-h-[44px] min-w-[44px] justify-center touch-manipulation"
+                  aria-label="일기 기록"
                 >
-                  <History className="h-4 w-4" />
-                  <span className="hidden sm:inline">기록</span>
+                  <History className="h-5 w-5 sm:h-4 sm:w-4" />
+                  <span className="hidden md:inline">기록</span>
                 </Link>
               )}
-              {/* Vocabulary Link */}
+
+              {/* Vocabulary Link - HIG touch target */}
               {session?.user && (
                 <Link
                   href="/vocabulary"
-                  className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground active:text-foreground transition-colors min-h-[44px] min-w-[44px] justify-center touch-manipulation"
+                  aria-label="표현노트"
                 >
-                  <BookOpen className="h-4 w-4" />
-                  <span className="hidden sm:inline">표현노트</span>
+                  <BookOpen className="h-5 w-5 sm:h-4 sm:w-4" />
+                  <span className="hidden md:inline">표현노트</span>
                 </Link>
               )}
+
+              {/* Usage Counter - Hide on mobile */}
               {session?.user && usageStatus && (
-                <UsageCounter
-                  remaining={usageStatus.remaining}
-                  isPremium={usageStatus.isPremium}
-                />
+                <div className="hidden sm:block">
+                  <UsageCounter
+                    remaining={usageStatus.remaining}
+                    isPremium={usageStatus.isPremium}
+                  />
+                </div>
               )}
+
               <LoginButton user={session?.user} />
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center px-4 py-8 md:py-12">
+      {/* Main Content - Responsive padding with safe area */}
+      <div className="flex-1 flex items-center justify-center px-3 sm:px-4 lg:px-6 py-4 sm:py-6 md:py-8 lg:py-12 safe-bottom">
         {viewMode === "calendar" ? (
           <CalendarView onWriteToday={handleWriteToday} />
         ) : viewMode === "write" ? (

@@ -25,9 +25,11 @@ interface MoodSelectorProps {
 
 export function MoodSelector({ selectedMood, onSelect, disabled }: MoodSelectorProps) {
   return (
-    <div className="flex flex-col gap-3 w-full">
-      <label className="text-sm text-ds-text-secondary font-medium">오늘의 기분은?</label>
-      <div className="flex gap-2 flex-wrap justify-center">
+    <div className="flex flex-col gap-2 sm:gap-3 w-full">
+      <label className="text-xs sm:text-sm text-ds-text-secondary font-medium text-center sm:text-left">
+        오늘의 기분은?
+      </label>
+      <div className="flex gap-1.5 sm:gap-2 flex-wrap justify-center">
         {MOODS.map((mood) => (
           <button
             key={mood.id}
@@ -35,17 +37,23 @@ export function MoodSelector({ selectedMood, onSelect, disabled }: MoodSelectorP
             onClick={() => onSelect(mood.id)}
             disabled={disabled}
             className={cn(
-              "flex flex-col items-center gap-1 px-4 py-2.5 rounded-full border-2 transition-smooth shadow-sm",
+              // HIG: 44pt minimum touch target
+              "flex flex-col items-center gap-0.5 sm:gap-1 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full border-2 transition-smooth shadow-sm",
+              "touch-manipulation min-h-[44px] min-w-[44px]",
               "hover:border-ds-pastel-yellow hover:bg-ds-pastel-yellow/30",
+              "active:border-ds-pastel-yellow active:bg-ds-pastel-yellow/30",
               "disabled:opacity-50 disabled:cursor-not-allowed",
               selectedMood === mood.id
                 ? "border-ds-pastel-yellow bg-ds-pastel-yellow/50 shadow-md scale-105"
                 : "border-ds-border-light bg-white"
             )}
             title={mood.label}
+            aria-label={mood.label}
           >
-            <span className="text-xl">{mood.emoji}</span>
-            <span className="text-xs text-ds-text-secondary font-medium">{mood.label}</span>
+            <span className="text-lg sm:text-xl leading-none">{mood.emoji}</span>
+            <span className="text-[10px] sm:text-xs text-ds-text-secondary font-medium hidden xs:block leading-none">
+              {mood.label}
+            </span>
           </button>
         ))}
       </div>

@@ -13,7 +13,10 @@ import {
   getNextMonth,
   getTodayKST,
 } from "@/lib/calendar/utils";
-import type { CalendarMonthData, CalendarEntryData } from "@/app/api/calendar/[year]/[month]/route";
+import type {
+  CalendarMonthData,
+  CalendarEntryData,
+} from "@/app/api/calendar/[year]/[month]/route";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -23,10 +26,14 @@ interface CalendarViewProps {
 
 export function CalendarView({ onWriteToday }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(getCurrentYearMonthKST);
-  const [calendarData, setCalendarData] = useState<CalendarMonthData | null>(null);
+  const [calendarData, setCalendarData] = useState<CalendarMonthData | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [selectedEntry, setSelectedEntry] = useState<CalendarEntryData | null>(null);
+  const [selectedEntry, setSelectedEntry] = useState<CalendarEntryData | null>(
+    null,
+  );
 
   const { year, month } = currentDate;
   const { daysInMonth, startDayOfWeek } = getMonthDays(year, month);
@@ -86,7 +93,8 @@ export function CalendarView({ onWriteToday }: CalendarViewProps) {
 
   // Check if we can navigate to next month (can't go beyond current month)
   const today = getCurrentYearMonthKST();
-  const canGoNext = year < today.year || (year === today.year && month < today.month);
+  const canGoNext =
+    year < today.year || (year === today.year && month < today.month);
 
   // Generate calendar grid
   const calendarGrid = [];
@@ -109,7 +117,7 @@ export function CalendarView({ onWriteToday }: CalendarViewProps) {
         entry={entry}
         onClick={handleDayClick}
         isCurrentMonth={true}
-      />
+      />,
     );
   }
 
@@ -120,20 +128,21 @@ export function CalendarView({ onWriteToday }: CalendarViewProps) {
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl mx-auto px-3 sm:px-4">
       {/* Calendar Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between mb-4 sm:mb-5 lg:mb-6">
+        <div className="flex items-center gap-1 sm:gap-2 lg:gap-3">
+          {/* HIG: 44x44pt minimum touch target */}
           <Button
             variant="ghost"
             size="icon"
             onClick={handlePreviousMonth}
             aria-label="이전 달"
-            className="hover:bg-ds-bg-secondary text-ds-text-primary h-10 w-10"
+            className="hover:bg-ds-bg-secondary active:bg-ds-bg-secondary text-ds-text-primary h-11 w-11 sm:h-10 sm:w-10 touch-manipulation"
           >
-            <ChevronLeft className="h-6 w-6" />
+            <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
           </Button>
-          <h2 className="font-handwriting text-3xl font-bold min-w-[180px] text-center text-ds-text-primary">
+          <h2 className="font-handwriting text-2xl sm:text-2xl md:text-3xl lg:text-3xl font-bold min-w-[120px] sm:min-w-[140px] lg:min-w-[180px] text-center text-ds-text-primary">
             {getMonthNameEnglish(month)} {year}
           </h2>
           <Button
@@ -142,56 +151,55 @@ export function CalendarView({ onWriteToday }: CalendarViewProps) {
             onClick={handleNextMonth}
             disabled={!canGoNext}
             aria-label="다음 달"
-            className="hover:bg-ds-bg-secondary text-ds-text-primary disabled:opacity-40 h-10 w-10"
+            className="hover:bg-ds-bg-secondary active:bg-ds-bg-secondary text-ds-text-primary disabled:opacity-40 h-11 w-11 sm:h-10 sm:w-10 touch-manipulation"
           >
-            <ChevronRight className="h-6 w-6" />
+            <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
           </Button>
         </div>
+        {/* HIG: Prominent CTA with adequate touch target */}
         <Button
           onClick={onWriteToday}
-          size="default"
-          className="bg-ds-accent-primary hover:bg-ds-accent-hover text-white shadow-card rounded-full gap-2 px-6 py-5 text-base font-semibold"
+          className="bg-ds-accent-primary hover:bg-ds-accent-hover active:scale-95 text-white shadow-card rounded-full gap-1.5 sm:gap-2 px-4 py-2.5 sm:px-5 sm:py-3.5 lg:px-6 lg:py-5 text-sm sm:text-base font-semibold touch-manipulation transition-transform min-h-[44px]"
         >
-          <PenLine className="h-5 w-5" />
-          오늘 쓰기
+          <PenLine className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="hidden xs:inline sm:inline">오늘 쓰기</span>
+          <span className="xs:hidden sm:hidden">쓰기</span>
         </Button>
       </div>
 
       {/* Weekday Headers */}
-      <div className="grid grid-cols-7 gap-2 mb-3">
+      <div className="grid grid-cols-7 gap-1 sm:gap-2 lg:gap-2 mb-2 sm:mb-3">
         {WEEKDAYS.map((day) => (
           <div
             key={day}
-            className="text-center text-sm font-semibold text-ds-text-primary py-2"
+            className="text-center text-xs sm:text-sm font-semibold text-ds-text-primary py-1.5 sm:py-2"
           >
             {day}
           </div>
         ))}
       </div>
 
-      {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-3">
-        {isLoading ? (
-          // Loading skeleton
-          Array.from({ length: 35 }).map((_, i) => (
-            <div
-              key={`skeleton-${i}`}
-              className="aspect-square w-full rounded-full bg-ds-bg-secondary/40 animate-pulse border-[3px] border-ds-border-light"
-            />
-          ))
-        ) : (
-          calendarGrid
-        )}
+      {/* Calendar Grid - Responsive gaps */}
+      <div className="grid grid-cols-7 gap-2 sm:gap-2.5 md:gap-3">
+        {isLoading
+          ? // Loading skeleton
+            Array.from({ length: 35 }).map((_, i) => (
+              <div
+                key={`skeleton-${i}`}
+                className="aspect-square w-full rounded-full bg-ds-bg-secondary/40 animate-pulse border-[3px] border-ds-border-light"
+              />
+            ))
+          : calendarGrid}
       </div>
 
-      {/* Heatmap Legend */}
-      <div className="flex items-center justify-end gap-3 mt-6 text-sm text-ds-text-secondary font-medium">
+      {/* Heatmap Legend - Responsive */}
+      <div className="flex items-center justify-center sm:justify-end gap-2 sm:gap-3 mt-4 sm:mt-5 lg:mt-6 text-xs sm:text-sm text-ds-text-secondary font-medium">
         <span>적음</span>
-        <div className="flex gap-1">
-          <div className="w-4 h-4 rounded-full bg-ds-pastel-yellow/40 border-2 border-ds-pastel-yellow" />
-          <div className="w-4 h-4 rounded-full bg-ds-pastel-mint/50 border-2 border-ds-pastel-mint" />
-          <div className="w-4 h-4 rounded-full bg-ds-pastel-coral/50 border-2 border-ds-pastel-coral" />
-          <div className="w-4 h-4 rounded-full bg-ds-pastel-lavender/60 border-2 border-ds-pastel-lavender" />
+        <div className="flex gap-0.5 sm:gap-1">
+          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-ds-pastel-yellow/40 border-2 border-ds-pastel-yellow" />
+          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-ds-pastel-mint/50 border-2 border-ds-pastel-mint" />
+          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-ds-pastel-coral/50 border-2 border-ds-pastel-coral" />
+          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-ds-pastel-lavender/60 border-2 border-ds-pastel-lavender" />
         </div>
         <span>많음</span>
       </div>
@@ -202,7 +210,11 @@ export function CalendarView({ onWriteToday }: CalendarViewProps) {
           date={selectedDate}
           entry={selectedEntry}
           onClose={handleCloseQuickView}
-          onWriteToday={selectedDate === getTodayKST() && !selectedEntry ? onWriteToday : undefined}
+          onWriteToday={
+            selectedDate === getTodayKST() && !selectedEntry
+              ? onWriteToday
+              : undefined
+          }
         />
       )}
     </div>

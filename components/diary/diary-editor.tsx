@@ -164,36 +164,36 @@ export function DiaryEditor({
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto px-4">
-      {/* Diary Header - Date Stamp Style */}
-      <div className="flex items-center justify-center mb-8">
+    <div className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl mx-auto px-3 sm:px-4 lg:px-6">
+      {/* Diary Header - Date Stamp Style - Responsive */}
+      <div className="flex items-center justify-center mb-4 sm:mb-6 lg:mb-8">
         <div className="relative">
-          {/* Date stamp */}
-          <div className="bg-white border-2 border-ds-border-light rounded-2xl px-10 py-5 shadow-card">
+          {/* Date stamp - Responsive sizing */}
+          <div className="bg-white border-2 border-ds-border-light rounded-xl sm:rounded-2xl px-6 py-3 sm:px-8 sm:py-4 lg:px-10 lg:py-5 shadow-card">
             <div className="text-center">
-              <p className="text-xs uppercase tracking-wider text-ds-text-muted font-medium">
+              <p className="text-[10px] sm:text-xs uppercase tracking-wide sm:tracking-wider text-ds-text-muted font-medium">
                 {month} {year}
               </p>
-              <p className="text-6xl font-handwriting font-bold text-ds-accent-primary my-2">
+              <p className="text-4xl sm:text-5xl lg:text-6xl font-handwriting font-bold text-ds-accent-primary my-1 sm:my-1.5 lg:my-2 leading-none">
                 {day}
               </p>
-              <p className="text-sm text-ds-text-secondary font-medium">
+              <p className="text-xs sm:text-sm text-ds-text-secondary font-medium">
                 {weekday}
               </p>
             </div>
           </div>
-          {/* Decorative pin */}
-          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-red-400 rounded-full shadow-md border-2 border-red-300" />
+          {/* Decorative pin - Responsive */}
+          <div className="absolute -top-1.5 sm:-top-2 left-1/2 -translate-x-1/2 w-3 h-3 sm:w-4 sm:h-4 bg-red-400 rounded-full shadow-md border-2 border-red-300" />
         </div>
       </div>
 
-      {/* Mode Selector */}
-      <div className="mb-6">
+      {/* Mode Selector - Responsive */}
+      <div className="mb-4 sm:mb-5 lg:mb-6">
         <ModeSelector mode={mode} onModeChange={setMode} disabled={isLoading} />
       </div>
 
-      {/* Mood Selector */}
-      <div className="mb-6 flex justify-center">
+      {/* Mood Selector - Responsive */}
+      <div className="mb-4 sm:mb-5 lg:mb-6 flex justify-center">
         <MoodSelector
           selectedMood={selectedMood}
           onSelect={setSelectedMood}
@@ -206,32 +206,34 @@ export function DiaryEditor({
         <DailyMission word={todayWord} isCompleted={wordUsed} />
       )}
 
-      {/* Inspiration Hint (Free Mode only) */}
+      {/* Inspiration Hint (Free Mode only) - Responsive */}
       {mode === "free" && (
-        <div className="mb-6">
-          <div className="bg-ds-bg-secondary border-2 border-ds-border-light rounded-xl p-4 shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-ds-pastel-yellow/40 rounded-lg border border-ds-pastel-yellow">
-                <Lightbulb className="h-5 w-5 text-ds-accent-primary" />
+        <div className="mb-4 sm:mb-5 lg:mb-6">
+          <div className="bg-ds-bg-secondary border-2 border-ds-border-light rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm">
+            <div className="flex items-start gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-ds-pastel-yellow/40 rounded-lg border border-ds-pastel-yellow flex-shrink-0">
+                <Lightbulb className="h-4 w-4 sm:h-5 sm:w-5 text-ds-accent-primary" />
               </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-ds-text-secondary">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2 mb-1.5 sm:mb-2">
+                  <span className="text-xs sm:text-sm font-medium text-ds-text-secondary">
                     오늘의 주제
                   </span>
                   <button
                     onClick={changeInspiration}
                     disabled={isShuffling}
-                    className="text-xs text-ds-accent-primary hover:text-ds-accent-hover flex items-center gap-1 transition-smooth disabled:opacity-40 font-medium"
+                    className="text-[11px] sm:text-xs text-ds-accent-primary hover:text-ds-accent-hover active:text-ds-accent-hover flex items-center gap-1 transition-smooth disabled:opacity-40 font-medium touch-manipulation min-h-[44px] -my-2"
+                    aria-label="다른 주제 찾기"
                   >
                     <RotateCw className={`h-3 w-3 ${isShuffling ? "animate-spin" : ""}`} />
-                    다른 주제 찾기
+                    <span className="hidden xs:inline">다른 주제 찾기</span>
+                    <span className="xs:hidden">변경</span>
                   </button>
                 </div>
-                <p className={`text-ds-text-primary font-semibold text-base transition-opacity ${isShuffling ? "opacity-50" : "opacity-100"}`}>
+                <p className={`text-ds-text-primary font-semibold text-sm sm:text-base transition-opacity ${isShuffling ? "opacity-50" : "opacity-100"} leading-snug`}>
                   {selectedPrompt?.title || "오늘 하루 어땠나요?"}
                 </p>
-                <p className="text-xs text-ds-text-muted mt-2">
+                <p className="text-[11px] sm:text-xs text-ds-text-muted mt-1.5 sm:mt-2 leading-relaxed">
                   AI 정확성 향상을 위해, 저희에게 프롬프트를 주세요
                 </p>
               </div>
@@ -240,21 +242,21 @@ export function DiaryEditor({
         </div>
       )}
 
-      {/* Diary Paper */}
+      {/* Diary Paper - Responsive */}
       <div className="relative">
         {/* Paper background */}
         <div
-          className="bg-[#fffef9] dark:bg-[#1c1917] rounded-2xl shadow-lg overflow-hidden"
+          className="bg-[#fffef9] dark:bg-[#1c1917] rounded-xl sm:rounded-2xl shadow-lg overflow-hidden"
           style={{
             boxShadow: "0 4px 24px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
           }}
         >
-          {/* Red margin line */}
-          <div className="absolute left-12 top-0 bottom-0 w-[1px] bg-red-200/60 dark:bg-red-900/40" />
+          {/* Red margin line - Responsive */}
+          <div className="absolute left-8 sm:left-10 lg:left-12 top-0 bottom-0 w-[1px] bg-red-200/60 dark:bg-red-900/40" />
 
-          {/* Notebook lines */}
+          {/* Notebook lines - Responsive */}
           <div
-            className="absolute inset-0 pointer-events-none"
+            className="absolute inset-0 pointer-events-none hidden sm:block"
             style={{
               backgroundImage:
                 "repeating-linear-gradient(transparent, transparent 31px, #e8e4d9 31px, #e8e4d9 32px)",
@@ -262,20 +264,20 @@ export function DiaryEditor({
             }}
           />
 
-          {/* Hole punches decoration */}
-          <div className="absolute left-3 top-8 w-3 h-3 rounded-full bg-zinc-200 dark:bg-zinc-700 shadow-inner" />
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-zinc-200 dark:bg-zinc-700 shadow-inner" />
-          <div className="absolute left-3 bottom-8 w-3 h-3 rounded-full bg-zinc-200 dark:bg-zinc-700 shadow-inner" />
+          {/* Hole punches decoration - Hide on mobile */}
+          <div className="hidden sm:block absolute left-3 top-8 w-3 h-3 rounded-full bg-zinc-200 dark:bg-zinc-700 shadow-inner" />
+          <div className="hidden sm:block absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-zinc-200 dark:bg-zinc-700 shadow-inner" />
+          <div className="hidden sm:block absolute left-3 bottom-8 w-3 h-3 rounded-full bg-zinc-200 dark:bg-zinc-700 shadow-inner" />
 
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={getPlaceholder()}
-            className="w-full min-h-[320px] pl-16 pr-6 py-5 text-lg leading-8 resize-none bg-transparent relative z-10 focus:outline-none placeholder:text-zinc-400/70 dark:placeholder:text-zinc-600 text-zinc-800 dark:text-zinc-200"
+            className="w-full min-h-[280px] sm:min-h-[320px] lg:min-h-[360px] pl-10 sm:pl-14 lg:pl-16 pr-4 sm:pr-6 py-4 sm:py-5 text-base sm:text-lg leading-7 sm:leading-8 resize-none bg-transparent relative z-10 focus:outline-none placeholder:text-zinc-400/70 dark:placeholder:text-zinc-600 text-zinc-800 dark:text-zinc-200"
             style={{
               fontFamily: "'Georgia', 'Noto Serif KR', serif",
-              lineHeight: "32px",
+              lineHeight: "28px",
             }}
             disabled={isLoading}
           />
@@ -285,38 +287,38 @@ export function DiaryEditor({
         <div className="absolute -bottom-1 left-2 right-2 h-2 bg-gradient-to-b from-zinc-100/50 to-transparent dark:from-zinc-800/30 rounded-b-xl" />
       </div>
 
-      {/* Footer */}
-      <div className="flex justify-between items-center mt-4 px-1">
-        <p className="text-sm text-ds-text-muted">
+      {/* Footer - Responsive */}
+      <div className="flex justify-between items-center mt-3 sm:mt-4 px-1">
+        <p className="text-xs sm:text-sm text-ds-text-muted">
           {text.length > 0 && <span>{text.length}자</span>}
         </p>
-        <p className="text-xs text-ds-text-muted">⌘ + Enter</p>
+        <p className="text-[11px] sm:text-xs text-ds-text-muted hidden sm:block">⌘ + Enter</p>
       </div>
 
-      {/* Submit Button */}
-      <div className="mt-6 flex justify-center">
+      {/* Submit Button - HIG: Prominent CTA with adequate touch target */}
+      <div className="mt-4 sm:mt-5 lg:mt-6 flex justify-center">
         <Button
           onClick={handleSubmit}
           disabled={!text.trim() || isLoading}
           size="lg"
-          className="px-12 py-6 gap-2 rounded-full bg-ds-accent-primary hover:bg-ds-accent-hover text-white shadow-card font-medium"
+          className="w-full sm:w-auto px-8 sm:px-10 lg:px-12 py-4 sm:py-5 lg:py-6 gap-2 rounded-full bg-ds-accent-primary hover:bg-ds-accent-hover active:scale-95 text-white shadow-card font-semibold text-base sm:text-lg touch-manipulation transition-transform min-h-[48px] sm:min-h-[52px]"
         >
           {isLoading ? (
             <>
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <Loader2 className="h-5 w-5 sm:h-5 sm:w-5 animate-spin" />
               교정 중...
             </>
           ) : (
             <>
-              <Pencil className="h-5 w-5" />
+              <Pencil className="h-5 w-5 sm:h-5 sm:w-5" />
               교정받기
             </>
           )}
         </Button>
       </div>
 
-      {/* Encouragement */}
-      <p className="text-center text-sm text-ds-text-muted mt-5">
+      {/* Encouragement - Responsive */}
+      <p className="text-center text-xs sm:text-sm text-ds-text-muted mt-3 sm:mt-4 lg:mt-5 px-4">
         틀려도 괜찮아요! 매일 쓰는 게 중요해요 ✨
       </p>
     </div>
