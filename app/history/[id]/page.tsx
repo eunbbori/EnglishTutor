@@ -168,7 +168,7 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
               <div className="w-full h-full opacity-20 bg-gradient-to-r from-transparent via-amber-900/10 to-transparent" />
             </div>
 
-            <div className="torn-paper p-6 relative transform rotate-[-0.5deg]">
+            <div className="torn-paper p-6 relative">
               <h2 className="text-sm font-semibold text-amber-800 mb-4 flex items-center gap-2 uppercase tracking-wide">
                 <span>✏️</span>
                 <span>오늘의 일기</span>
@@ -197,7 +197,7 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
               <div className="w-full h-full opacity-20 bg-gradient-to-r from-transparent via-green-900/10 to-transparent" />
             </div>
 
-            <div className="torn-paper p-6 relative bg-green-50/20 transform rotate-[0.5deg]">
+            <div className="torn-paper p-6 relative bg-green-50/20">
               <h2 className="text-sm font-semibold text-green-800 mb-4 flex items-center gap-2 uppercase tracking-wide">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
                 <span>교정</span>
@@ -228,7 +228,7 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
                 <div className="w-full h-full opacity-20 bg-gradient-to-r from-transparent via-orange-900/10 to-transparent" />
               </div>
 
-              <div className="torn-paper p-6 relative bg-amber-50/30 transform rotate-[-0.3deg]">
+              <div className="torn-paper p-6 relative bg-amber-50/30">
                 <h2 className="text-sm font-semibold text-amber-900 mb-4 flex items-center gap-2 uppercase tracking-wide">
                   <Lightbulb className="h-4 w-4 text-amber-700" />
                   <span>설명</span>
@@ -250,7 +250,7 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
                 <div className="w-full h-full opacity-20 bg-gradient-to-r from-transparent via-blue-900/10 to-transparent" />
               </div>
 
-              <div className="torn-paper p-6 relative bg-blue-50/20 transform rotate-[0.4deg]">
+              <div className="torn-paper p-6 relative bg-blue-50/20">
                 <h2 className="text-sm font-semibold text-blue-800 mb-4 flex items-center gap-2 uppercase tracking-wide">
                   <RefreshCw className="h-4 w-4 text-blue-600" />
                   <span>다른 표현</span>
@@ -283,7 +283,7 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
                 <div className="w-full h-full opacity-20 bg-gradient-to-r from-transparent via-purple-900/10 to-transparent" />
               </div>
 
-              <div className="torn-paper p-6 relative bg-purple-50/20 transform rotate-[-0.2deg]">
+              <div className="torn-paper p-6 relative bg-purple-50/20">
                 <h2 className="text-sm font-semibold text-purple-800 mb-4 flex items-center gap-2 uppercase tracking-wide">
                   <span className="text-base">💡</span>
                   <span>팁</span>
