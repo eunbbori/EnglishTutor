@@ -2,13 +2,13 @@ import { db } from "@/db";
 import { chats, messages } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { EnglishTutorGraph } from "@/lib/ai/graph";
-import { ConversationSummarizer } from "@/lib/ai/summarizer";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
-import { getOrCreateUserProfile } from "@/lib/db/user-profile";
+import { getOrCreateUserProfile, getExplanationStyle } from "@/lib/db/user-profile";
 import { saveOrUpdateMistake, checkRecurringPattern } from "@/lib/db/mistakes";
 import { auth } from "@/lib/auth";
 import { getUsageStatus, incrementUsage } from "@/lib/subscription/check-usage";
 import { recordDiaryEntry } from "@/lib/streak/streak-manager";
+import { grantXp } from "@/lib/gamification/xp-service";
 
 // Vercel timeout configuration (max 60s for Hobby plan)
 export const maxDuration = 60;
@@ -132,8 +132,9 @@ export async function POST(req: Request) {
 
     // Initialize or get user profile
     const userProfile = await getOrCreateUserProfile(userId);
+    const explanationStyle = getExplanationStyle(userProfile);
     console.log("[API] User profile loaded:", {
-      level: userProfile.level,
+      explanationStyle,
       hasGoal: !!userProfile.learningGoal,
     });
 
@@ -158,18 +159,14 @@ export async function POST(req: Request) {
     // Add new user message
     langchainMessages.push(new HumanMessage(lastUserMessage.content));
 
-    // Load summary if exists
-    const summarizer = new ConversationSummarizer(5);
-    const existingSummary = await summarizer.getChatSummary(currentChatId);
-
-    // Initialize graph with checkpointer
+    // Initialize graph
     const tutorGraph = new EnglishTutorGraph();
-    const graph = tutorGraph.compileWithCheckpointer(currentChatId);
+    const graph = tutorGraph.getGraph();
 
     // Prepare initial state
     const initialState = {
       messages: langchainMessages,
-      summary: existingSummary || "",
+      summary: "", // v3.0: Summary feature removed
       userProfile: Array.isArray(userProfile.recurringMistakes)
         ? userProfile.recurringMistakes
         : [],
@@ -183,11 +180,7 @@ export async function POST(req: Request) {
     // Invoke graph
     console.log("[API] Invoking LangGraph...");
 
-    const result = await graph.invoke(initialState, {
-      configurable: {
-        thread_id: currentChatId,
-      },
-    });
+    const result = await graph.invoke(initialState);
 
     const correctionResult = result.correctionResult;
 
@@ -233,6 +226,49 @@ export async function POST(req: Request) {
       }
     }
 
+    // Grant XP for diary submission (authenticated users only)
+    const xpResults: Array<{action: string; xpGained: number; leveledUp: boolean; newLevel?: number}> = [];
+    if (isAuthenticated) {
+      try {
+        // 1. Base XP: diary_submit (+30 XP)
+        const diaryXp = await grantXp(userId, "diary_submit", currentChatId);
+        console.log(`[API] XP granted for diary_submit: +${diaryXp.xpGained} XP (total: ${diaryXp.totalXp})`);
+        xpResults.push({
+          action: "diary_submit",
+          xpGained: diaryXp.xpGained,
+          leveledUp: diaryXp.leveledUp,
+          newLevel: diaryXp.newLevel,
+        });
+
+        // 2. Challenge word bonus (+15 XP if used)
+        if (mood || correctionResult?.challengeWordUsed) {
+          const challengeXp = await grantXp(userId, "challenge_word", currentChatId);
+          console.log(`[API] XP granted for challenge_word: +${challengeXp.xpGained} XP`);
+          xpResults.push({
+            action: "challenge_word",
+            xpGained: challengeXp.xpGained,
+            leveledUp: challengeXp.leveledUp,
+            newLevel: challengeXp.newLevel,
+          });
+        }
+
+        // 3. Perfect diary bonus (+20 XP if no mistakes)
+        if (correctionResult && !correctionResult.mistakeType) {
+          const perfectXp = await grantXp(userId, "perfect_diary", currentChatId);
+          console.log(`[API] XP granted for perfect_diary: +${perfectXp.xpGained} XP`);
+          xpResults.push({
+            action: "perfect_diary",
+            xpGained: perfectXp.xpGained,
+            leveledUp: perfectXp.leveledUp,
+            newLevel: perfectXp.newLevel,
+          });
+        }
+      } catch (error) {
+        console.error("[API] Failed to grant XP:", error);
+        // Don't fail the request if XP tracking fails (non-blocking)
+      }
+    }
+
     // Save mistake pattern to database if detected
     if (correctionResult?.mistakeType && correctionResult?.mistakePattern) {
       try {
@@ -268,10 +304,12 @@ export async function POST(req: Request) {
       }
     }
 
-    // Return the correction result (include mood if provided)
-    const responseObject = mood
-      ? { ...correctionResult, mood }
-      : correctionResult;
+    // Return the correction result (include mood and XP results if provided)
+    const responseObject = {
+      ...correctionResult,
+      ...(mood && { mood }),
+      ...(xpResults.length > 0 && { xpResults }),
+    };
     return Response.json(
       { object: responseObject },
       {

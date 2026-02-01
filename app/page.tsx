@@ -10,8 +10,10 @@ import { CorrectionResult } from "@/components/diary/correction-result";
 import { CalendarView } from "@/components/calendar/calendar-view";
 import { Toaster } from "@/components/ui/toaster";
 import { Badge } from "@/components/ui/badge";
-import { PenLine, Flame, History, Calendar, BookOpen } from "lucide-react";
+import { PenLine, Flame, History, Calendar, BookOpen, Shield } from "lucide-react";
 import Link from "next/link";
+import { LevelBadge } from "@/components/gamification/level-badge";
+import { useXpToast } from "@/components/gamification/xp-toast";
 
 interface UsageStatus {
   isPremium: boolean;
@@ -31,6 +33,12 @@ interface CorrectionData {
   insight?: string;
   keywords?: string[];
   mood?: string;
+  xpResults?: Array<{
+    action: string;
+    xpGained: number;
+    leveledUp: boolean;
+    newLevel?: number;
+  }>;
 }
 
 // 오늘의 주제 목록 (id, title, placeholder)
@@ -100,14 +108,17 @@ type ViewMode = "calendar" | "write" | "result";
 
 export default function Home() {
   const { data: session, status } = useSession();
+  const { showXpGained } = useXpToast();
   const [viewMode, setViewMode] = useState<ViewMode>("calendar");
   const [isLoading, setIsLoading] = useState(false);
   const [chatId, setChatId] = useState<string | null>(null);
   const [usageStatus, setUsageStatus] = useState<UsageStatus | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [streak, setStreak] = useState(0);
+  const [freezeCount, setFreezeCount] = useState(0);
   const [defaultPromptId] = useState(getTodayPromptId());
   const [correctionData, setCorrectionData] = useState<CorrectionData | null>(null);
+  const [levelBadgeKey, setLevelBadgeKey] = useState(0); // Force LevelBadge refresh
 
   // Fetch usage status
   const fetchUsageStatus = useCallback(async () => {
@@ -137,6 +148,7 @@ export default function Home() {
       if (response.ok) {
         const data = await response.json();
         setStreak(data.currentStreak);
+        setFreezeCount(data.freezeCount || 0);
       }
     } catch (error) {
       console.error("Failed to fetch streak:", error);
@@ -192,6 +204,22 @@ export default function Home() {
       setCorrectionData(result);
       setViewMode("result");
 
+      // Show XP toasts if XP was granted
+      if (result.xpResults && result.xpResults.length > 0) {
+        // Calculate total XP gained
+        const totalXp = result.xpResults.reduce((sum: number, xp: any) => sum + xp.xpGained, 0);
+
+        // Show toast for each XP action
+        result.xpResults.forEach((xp: any, index: number) => {
+          setTimeout(() => {
+            showXpGained(xp.xpGained, xp.action, false);
+          }, index * 500); // Stagger toasts by 500ms
+        });
+
+        // Refresh LevelBadge to show new level/XP
+        setLevelBadgeKey(prev => prev + 1);
+      }
+
       // Refresh usage status and streak
       await Promise.all([fetchUsageStatus(), fetchStreak()]);
     } catch (error) {
@@ -235,12 +263,23 @@ export default function Home() {
 
             {/* Navigation - Responsive with HIG 44pt touch targets */}
             <div className="flex items-center gap-1 sm:gap-2 lg:gap-3">
+              {/* Level Badge - Show for authenticated users */}
+              {status === "authenticated" && <LevelBadge key={levelBadgeKey} />}
+
               {/* Streak Badge - Hide on very small screens */}
               {streak > 0 && (
                 <Badge variant="secondary" className="hidden xs:flex gap-1 bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200 text-xs px-2 py-0.5">
                   <Flame className="h-3 w-3 text-orange-500" />
                   <span className="hidden sm:inline">{streak}일</span>
                   <span className="sm:hidden">{streak}</span>
+                </Badge>
+              )}
+
+              {/* Freeze Badge - Show if user has Freeze */}
+              {status === "authenticated" && freezeCount > 0 && (
+                <Badge variant="outline" className="hidden xs:flex gap-1 border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-300 text-xs px-2 py-0.5">
+                  <Shield className="h-3 w-3" />
+                  <span>{freezeCount}</span>
                 </Badge>
               )}
 
