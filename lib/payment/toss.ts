@@ -94,5 +94,5 @@ export async function cancelPayment(
 }
 
 // 정기 결제(빌링) 관련 상수
-export const SUBSCRIPTION_AMOUNT = 9900; // ₩9,900/월
+export const SUBSCRIPTION_AMOUNT = 6900; // ₩6,900/월
 export const SUBSCRIPTION_ORDER_NAME = "Politely Premium 월 구독";

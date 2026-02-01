@@ -62,7 +62,7 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
 
           <div className="text-center">
             <p className="text-2xl font-bold">
-              ₩9,900<span className="text-sm font-normal text-muted-foreground">/월</span>
+              ₩6,900<span className="text-sm font-normal text-muted-foreground">/월</span>
             </p>
           </div>
 
