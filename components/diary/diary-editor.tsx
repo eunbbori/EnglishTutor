@@ -48,6 +48,56 @@ interface ShuffleData {
   count: number;
 }
 
+/**
+ * Input validation rules to prevent abuse
+ */
+interface ValidationResult {
+  isValid: boolean;
+  errorMessage: string | null;
+}
+
+function validateDiaryInput(text: string): ValidationResult {
+  const trimmed = text.trim();
+
+  // 1. Empty text check
+  if (trimmed.length === 0) {
+    return { isValid: false, errorMessage: null }; // No message needed, button is disabled
+  }
+
+  // 2. Minimum character count (20 chars excluding spaces)
+  const textWithoutSpaces = trimmed.replace(/\s/g, "");
+  if (textWithoutSpaces.length < 20) {
+    return { isValid: false, errorMessage: "조금 더 써볼까요? (공백 제외 20자 이상)" };
+  }
+
+  // 3. Minimum word count (5 words)
+  const words = trimmed.split(/\s+/);
+  if (words.length < 5) {
+    return { isValid: false, errorMessage: "문장을 조금 더 만들어보세요! (5단어 이상)" };
+  }
+
+  // 4. Repeated character detection (5+ consecutive)
+  const repeatedCharPattern = /(.)\1{4,}/;
+  if (repeatedCharPattern.test(trimmed)) {
+    return { isValid: false, errorMessage: "의미 있는 영어 문장을 써주세요." };
+  }
+
+  // 5. Repeated word detection (70%+ same word)
+  const wordCounts = new Map<string, number>();
+  words.forEach(word => {
+    const normalized = word.toLowerCase();
+    wordCounts.set(normalized, (wordCounts.get(normalized) || 0) + 1);
+  });
+
+  for (const [word, count] of wordCounts) {
+    if (count / words.length >= 0.7) {
+      return { isValid: false, errorMessage: "다양한 단어로 일기를 써보세요!" };
+    }
+  }
+
+  return { isValid: true, errorMessage: null };
+}
+
 export function DiaryEditor({
   prompts,
   defaultPromptId,
@@ -67,6 +117,9 @@ export function DiaryEditor({
   const todayWord = getTodayWord();
   const wordUsed =
     mode === "challenge" ? checkWordUsage(text, todayWord.word) : false;
+
+  // Input validation
+  const validation = validateDiaryInput(text);
 
   // Load shuffle count from localStorage on mount
   useEffect(() => {
@@ -108,7 +161,7 @@ export function DiaryEditor({
   }, [selectedPrompt, prompts, defaultPromptId]);
 
   const handleSubmit = () => {
-    if (!text.trim() || isLoading) return;
+    if (!validation.isValid || isLoading) return;
     onSubmit(text, selectedPrompt?.id || null, selectedMood);
   };
 
@@ -315,9 +368,17 @@ export function DiaryEditor({
 
       {/* Footer - Responsive */}
       <div className="flex justify-between items-center mt-3 sm:mt-4 px-1">
-        <p className="text-xs sm:text-sm text-ds-text-muted">
-          {text.length > 0 && <span>{text.length}자</span>}
-        </p>
+        <div className="flex-1">
+          {validation.errorMessage ? (
+            <p className="text-xs sm:text-sm text-red-500 font-medium">
+              {validation.errorMessage}
+            </p>
+          ) : (
+            <p className="text-xs sm:text-sm text-ds-text-muted">
+              {text.length > 0 && <span>{text.length}자</span>}
+            </p>
+          )}
+        </div>
         <p className="text-[11px] sm:text-xs text-ds-text-muted hidden sm:block">
           ⌘ + Enter
         </p>
@@ -327,7 +388,7 @@ export function DiaryEditor({
       <div className="mt-4 sm:mt-5 lg:mt-6 flex justify-center">
         <Button
           onClick={handleSubmit}
-          disabled={!text.trim() || isLoading}
+          disabled={!validation.isValid || isLoading}
           size="lg"
           className="w-full sm:w-auto px-8 sm:px-10 lg:px-12 py-4 sm:py-5 lg:py-6 gap-2 rounded-full bg-ds-accent-primary hover:bg-ds-accent-hover active:scale-95 text-white shadow-card font-semibold text-base sm:text-lg touch-manipulation transition-transform min-h-[48px] sm:min-h-[52px]"
         >

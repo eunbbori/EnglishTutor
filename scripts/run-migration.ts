@@ -4,7 +4,7 @@ import { readFileSync } from "fs";
 import path from "path";
 
 // Load environment variables
-config({ path: ".env.local" });
+config({ path: ".env" });
 
 async function runMigration() {
   if (!process.env.DATABASE_URL) {
@@ -13,8 +13,8 @@ async function runMigration() {
 
   const sql = neon(process.env.DATABASE_URL);
 
-  // Read the latest migration file
-  const migrationPath = path.join(process.cwd(), "drizzle/0003_lyrical_betty_brant.sql");
+  // Read the latest migration file (Phase 4: DROP)
+  const migrationPath = path.join(process.cwd(), "drizzle/0011_living_ronan.sql");
   const migrationSQL = readFileSync(migrationPath, "utf-8");
 
   console.log("Running migration:", migrationPath);
@@ -36,7 +36,23 @@ async function runMigration() {
       console.log(`[${i + 1}/${statements.length}] Executing:`);
       console.log(statement.substring(0, 100) + "...\n");
 
-      await sql(statement);
+      try {
+        await sql(statement);
+        console.log("  ✓ Success\n");
+      } catch (error: any) {
+        // Check if column already exists (error code 42701)
+        if (error.code === '42701') {
+          console.log("  ⚠ Column already exists, skipping\n");
+          continue;
+        }
+        // Check if relation already exists (error code 42P07)
+        if (error.code === '42P07') {
+          console.log("  ⚠ Relation already exists, skipping\n");
+          continue;
+        }
+        // Other errors should fail
+        throw error;
+      }
     }
 
     console.log("✅ Migration completed successfully!");

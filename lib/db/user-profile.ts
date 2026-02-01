@@ -3,6 +3,21 @@ import { userProfiles } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 /**
+ * Extract explanation style from learning preferences
+ * v3.0: level moved to learning_preferences.explanation_style
+ */
+export function getExplanationStyle(profile: any): 'detailed' | 'concise' {
+  if (typeof profile.learningPreferences === 'object' && profile.learningPreferences !== null) {
+    const prefs = profile.learningPreferences as Record<string, unknown>;
+    const style = prefs.explanation_style;
+    if (style === 'detailed' || style === 'concise') {
+      return style;
+    }
+  }
+  return 'detailed'; // Default for new users
+}
+
+/**
  * Get existing user profile or create a new one if it doesn't exist
  * @param userId - The user ID to lookup/create profile for
  * @returns The user profile record
@@ -28,10 +43,9 @@ export async function getOrCreateUserProfile(userId: string) {
       .insert(userProfiles)
       .values({
         userId,
-        level: "detailed", // Default: detailed explanations for new users
         learningGoal: null,
         recurringMistakes: [],
-        learningPreferences: {},
+        learningPreferences: { explanation_style: "detailed" }, // v3.0: level moved to preferences
       })
       .returning();
 
@@ -51,7 +65,6 @@ export async function getOrCreateUserProfile(userId: string) {
 export async function updateUserProfile(
   userId: string,
   updates: {
-    level?: "detailed" | "concise";
     learningGoal?: string | null;
     recurringMistakes?: unknown[];
     learningPreferences?: Record<string, unknown>;

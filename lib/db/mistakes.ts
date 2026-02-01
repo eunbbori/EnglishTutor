@@ -29,15 +29,16 @@ export async function saveOrUpdateMistake(
     // Extract category from mistakeType (e.g., "grammar:tense" -> "grammar")
     const category = parseMistakeCategory(mistakeType);
 
-    // Map category to database enum (expression -> grammar for now)
+    // Map category to database enum (v3.0: 3-category system)
     const categoryMap: Record<string, string> = {
       grammar: "grammar",
       vocabulary: "vocabulary",
-      pronunciation: "pronunciation",
-      fluency: "fluency",
-      comprehension: "comprehension",
-      expression: "grammar", // Map expression errors to grammar category
-      style: "grammar", // Map style errors to grammar category
+      expression: "expression",
+      // Legacy mappings (from Phase 3 data migration)
+      pronunciation: "expression",
+      fluency: "expression",
+      comprehension: "vocabulary",
+      style: "expression",
     };
 
     const mappedCategory = categoryMap[category] || "grammar";
@@ -83,7 +84,7 @@ export async function saveOrUpdateMistake(
         .insert(userMistakes)
         .values({
           userId,
-          mistakeType: mappedCategory as "grammar" | "vocabulary" | "pronunciation" | "fluency" | "comprehension",
+          mistakeType: mappedCategory as "grammar" | "vocabulary" | "expression",
           pattern,
           frequency: 1,
           examples: [example],
@@ -129,7 +130,7 @@ export async function getUserMistakes(userId: string) {
  */
 export async function getUserMistakesByType(
   userId: string,
-  mistakeType: "grammar" | "vocabulary" | "pronunciation" | "fluency" | "comprehension"
+  mistakeType: "grammar" | "vocabulary" | "expression"
 ) {
   try {
     const mistakes = await db

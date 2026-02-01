@@ -1,11 +1,9 @@
 import { StateGraph, Annotation, END, START } from "@langchain/langgraph";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { BaseMessage, HumanMessage, AIMessage, SystemMessage } from "@langchain/core/messages";
-import { NeonCheckpointer } from "./checkpointer";
 import { UserProfileManager, RecurringMistake } from "./user-profile";
-import { ConversationSummarizer } from "./summarizer";
 import { correctionSchema } from "./schema";
-import { getOrCreateUserProfile } from "@/lib/db/user-profile";
+import { getOrCreateUserProfile, getExplanationStyle } from "@/lib/db/user-profile";
 import { getRecentTopMistakes } from "@/lib/db/mistakes";
 import { validateResponseForLevel, formatValidationLog } from "./response-validator";
 
@@ -60,15 +58,12 @@ const ConversationState = Annotation.Root({
 /**
  * English Tutor Graph
  * Implements memory management with:
- * - Event-based memory (Checkpointer)
  * - Fact memory (User Profile)
- * - Conversation summarization (when > 5 messages)
  * - Async memory updates
  */
 export class EnglishTutorGraph {
   private model: ChatGoogleGenerativeAI;
   private graph: ReturnType<typeof this.buildGraph>;
-  private summarizer: ConversationSummarizer;
 
   private readonly SYSTEM_PROMPT = `You are Daily English, a friendly and encouraging English diary tutor for Korean learners.
 
@@ -130,7 +125,6 @@ IMPORTANT: Respond with a JSON object with these EXACT fields:
       temperature: 0.9, // Higher temperature for more diverse responses
       apiKey: process.env.GOOGLE_API_KEY, // Explicitly pass API key
     });
-    this.summarizer = new ConversationSummarizer(5);
     this.graph = this.buildGraph();
   }
 
@@ -142,7 +136,9 @@ IMPORTANT: Respond with a JSON object with these EXACT fields:
     try {
       // Get user profile
       const profile = await getOrCreateUserProfile(userId);
-      console.log(`[Adaptive Context] User level: ${profile.level}`);
+      const explanationStyle = getExplanationStyle(profile);
+      const userLevel = profile.xpLevel || 1;
+      console.log(`[Adaptive Context] User level: ${userLevel}, explanation style: ${explanationStyle}`);
 
       // Get recent top mistakes (last 7 days, TOP 3)
       const recentMistakes = await getRecentTopMistakes(userId, 3);
@@ -150,7 +146,7 @@ IMPORTANT: Respond with a JSON object with these EXACT fields:
 
       // Build context string
       let context = "\nUser Profile:";
-      context += `\n- Level: ${profile.level.toUpperCase()}`;
+      context += `\n- Explanation Style: ${explanationStyle.toUpperCase()}`;
 
       if (profile.learningGoal) {
         context += `\n- Learning Goal: ${profile.learningGoal}`;
@@ -163,11 +159,13 @@ IMPORTANT: Respond with a JSON object with these EXACT fields:
         });
       }
 
-      // Add style-specific guidance for diary writing
-      context += "\n\nExplanation Style Guidance for Diary:";
-      switch (profile.level) {
-        case "detailed":
-          context += `
+      // Add level-specific guidance for diary writing
+      context += "\n\nLevel-Based Explanation Guidance for Diary:";
+
+      if (userLevel <= 10) {
+        // Beginner (Lv.1-10): 70-90% Korean
+        context += `
+- User Level: ${userLevel} (Beginner)
 - Use simple vocabulary and short sentences
 - Focus on basic grammar rules (past tense, articles, prepositions)
 - Provide step-by-step breakdown with relatable examples
@@ -175,21 +173,33 @@ IMPORTANT: Respond with a JSON object with these EXACT fields:
 - Be warm and encouraging - this is about building a writing habit!
 - Make explanations friendly and conversational
 
-EXAMPLE for DETAILED:
+EXAMPLE for BEGINNER:
 Input: "Today I eat delicious food"
 Korean Explanation: "오늘 일기 잘 쓰셨어요! 👏 한 가지만 고치면 더 자연스러워져요. 일기는 보통 '오늘 있었던 일'을 쓰는 거라서 과거형을 써요. 'eat'의 과거형은 'ate'예요! 'Today I ate delicious food' 이렇게 쓰면 완벽해요. 앞으로 일기 쓸 때 '오늘 ~했다'는 과거형으로 써보세요!"`;
-          break;
-        case "concise":
-          context += `
-- Keep explanations short but helpful
-- Mix Korean and English (40-60% Korean)
-- Focus on the key correction point
-- Be friendly but efficient
+      } else if (userLevel <= 20) {
+        // Intermediate (Lv.11-20): 50-70% Korean
+        context += `
+- User Level: ${userLevel} (Intermediate)
+- Balance Korean and English (50-70% Korean)
+- Focus on key correction points
+- Include some English explanations for advanced concepts
+- Be supportive but efficient
 
-EXAMPLE for CONCISE:
+EXAMPLE for INTERMEDIATE:
 Input: "Today I eat delicious food"
-Korean Explanation: "좋은 표현이에요! 일기는 과거 일을 쓰는 거라서 'eat' → 'ate'로 바꿔주세요. 'Today I ate delicious food'가 자연스러워요."`;
-          break;
+Korean Explanation: "좋은 표현이에요! 일기는 과거 일을 쓰는 거라서 'eat' → 'ate'로 바꿔주세요. When describing past events, use past tense. 'Today I ate delicious food'가 자연스러워요."`;
+      } else {
+        // Advanced (Lv.21+): 30-50% Korean
+        context += `
+- User Level: ${userLevel} (Advanced)
+- Use mostly English explanations (30-50% Korean)
+- Focus on nuance and natural expression
+- Provide concise, professional feedback
+- Challenge the user to use more sophisticated language
+
+EXAMPLE for ADVANCED:
+Input: "Today I eat delicious food"
+Korean Explanation: "'eat' → 'ate' (past tense needed). For diary entries about past events, use simple past. Consider more expressive alternatives: 'savored', 'enjoyed', 'indulged in' 맛있는 음식을 먹었다는 표현을 더 풍부하게 해보세요!"`;
       }
 
       return context;
@@ -291,13 +301,14 @@ Korean Explanation: "좋은 표현이에요! 일기는 과거 일을 쓰는 거�
       // Validate response quality for user's level
       try {
         const userProfileData = await getOrCreateUserProfile(userId);
+        const explanationStyle = getExplanationStyle(userProfileData);
         const validation = validateResponseForLevel(
           correctionResult,
-          userProfileData.level
+          explanationStyle
         );
 
         // Log validation results
-        console.log(formatValidationLog(validation, userProfileData.level));
+        console.log(formatValidationLog(validation, explanationStyle));
 
         // Warn if validation fails
         if (!validation.isValid) {
@@ -324,14 +335,13 @@ Korean Explanation: "좋은 표현이에요! 일기는 과거 일을 쓰는 거�
   /**
    * Node: Update memory (async, after response is sent)
    * - Updates user profile with recurring mistakes
-   * - Triggers summarization if message count > 5
    */
   private async updateMemory(state: typeof ConversationState.State) {
-    const { messages, correctionResult, userId, chatId, messageCount } = state;
+    const { correctionResult, userId } = state;
 
-    console.log(`[Memory] Starting memory update (messageCount: ${messageCount})`);
+    console.log(`[Memory] Starting memory update`);
 
-    // 1. Update user profile with recurring mistakes
+    // Update user profile with recurring mistakes
     if (correctionResult?.mistakePattern) {
       const profileManager = new UserProfileManager(userId);
       try {
@@ -349,47 +359,7 @@ Korean Explanation: "좋은 표현이에요! 일기는 과거 일을 쓰는 거�
       console.log("[Memory] No mistake pattern detected, skipping user profile update");
     }
 
-    // 2. Trigger summarization if needed
-    if (this.summarizer.shouldSummarize(messageCount)) {
-      console.log(`[Memory] Triggering summarization (threshold exceeded: ${messageCount} > 5)`);
-      try {
-        const cleanedMessages = this.summarizer.cleanMessages(messages);
-        const { summary, recentMessages } = await this.summarizer.compactMessages(
-          cleanedMessages,
-          3 // Keep last 3 messages
-        );
-
-        // Update chat summary in database
-        await this.summarizer.updateChatSummary(chatId, summary);
-
-        console.log(`[Memory] ✓ Created summary for chat ${chatId}`);
-
-        return {
-          summary,
-        };
-      } catch (error) {
-        console.error("[Memory] ✗ Error during summarization:", error);
-      }
-    } else {
-      console.log(`[Memory] Summarization not needed (messageCount: ${messageCount} <= 5)`);
-    }
-
     return {};
-  }
-
-  /**
-   * Compile graph with checkpointer
-   */
-  compileWithCheckpointer(chatId: string) {
-    const checkpointer = new NeonCheckpointer(chatId);
-    const workflow = new StateGraph(ConversationState)
-      .addNode("generate_response", this.generateResponse.bind(this))
-      .addNode("update_memory", this.updateMemory.bind(this))
-      .addEdge(START as any, "generate_response" as any)
-      .addEdge("generate_response" as any, "update_memory" as any)
-      .addEdge("update_memory" as any, END as any);
-
-    return workflow.compile({ checkpointer });
   }
 
   /**

@@ -10,7 +10,7 @@ import { Check, Sparkles, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || "";
-const SUBSCRIPTION_AMOUNT = 9900;
+const SUBSCRIPTION_AMOUNT = 6900;
 
 declare global {
   interface Window {
@@ -143,7 +143,7 @@ export default function PricingPage() {
               <CardTitle>Premium</CardTitle>
               <CardDescription>제한 없이 사용하세요</CardDescription>
               <div className="text-3xl font-bold">
-                ₩9,900
+                ₩6,900
                 <span className="text-sm font-normal text-muted-foreground">/월</span>
               </div>
             </CardHeader>

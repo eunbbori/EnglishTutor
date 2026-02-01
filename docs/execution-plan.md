@@ -1,916 +1,466 @@
-# Execution Plan: Personalized AI English Tutor
+# Execution Plan v3.0 — 개발 실행 계획
 
-**Based on**: PRD v1.0
-**Created**: 2025-01-15
-**Owner**: Product Manager & Tech Lead
-**Status**: Ready for Implementation
-
----
-
-## Overview
-
-이 실행 계획은 PRD에 정의된 5가지 핵심 기능을 **3개 Phase**로 나누어 구현합니다.
-각 태스크는 독립적으로 완료 가능하며, 의존성이 명확히 정의되어 있습니다.
-
-**총 예상 기간**: 6개월
-**총 태스크 수**: 32개
+> **Document Owner**: Project Manager
+> **Last Updated**: 2026-01-31
+> **기준 문서**: [PRD v3.0](./PRD.md), [Database Schema v3.0](./database-schema.md)
+> **방법론**: Feature-driven Sprints (기능 단위 점진적 배포)
 
 ---
 
-## Phase Overview
+## 1. 현행 구현 상태 (As-Is)
 
-| Phase | Duration | Focus | Key Features |
-|-------|----------|-------|--------------|
-| Phase 1 (MVP) | 2개월 | Core Memory & Tracking | Feature 1, 2, 3 |
-| Phase 2 | 2개월 | Proactive Learning | Feature 4, 5 |
-| Phase 3 | 2개월 | Enhancement & Scale | 고도화, 최적화 |
+### ✅ 구현 완료 (v2.0)
+
+| 영역 | 구현 현황 | 코드 위치 |
+|------|----------|----------|
+| 일기 & AI 교정 | LangGraph + Gemini 교정 파이프라인 (원문/교정문/한국어 설명/대안 표현 3종) | `lib/ai/graph.ts`, `app/api/chat/route.ts` |
+| 챌린지 모드 | 오늘의 단어 20종 순환, 사용 여부 감지, 프롬프트 셔플 3회/일 | `lib/missions.ts`, `components/diary/daily-mission.tsx` |
+| 스트릭 | 연속 작성 일수, 최장 기록, 총 작성 수 | `lib/streak/streak-manager.ts` |
+| 캘린더 뷰 | 월별 달력, 기분 이모지, 키워드, 단어 수, 미리보기 | `components/calendar/`, `app/api/calendar/` |
+| 기록 조회 | 최신순 목록, 상세 보기 | `app/history/`, `app/api/history/` |
+| 표현노트 | 드래그 저장, AI 자동 보강 (뜻/발음/품사/동의어/예문/난이도) | `app/vocabulary/`, `lib/ai/vocabulary-enricher.ts` |
+| 오답 추적 | `user_mistakes` 기반 패턴 감지, 반복 시 인사이트 | `lib/db/mistakes.ts` |
+| 결제 | Toss Payments 구독 flow (₩9,900/월, 무료 3회/일) | `lib/payment/toss.ts`, `app/pricing/` |
+| 인증 | NextAuth + Google OAuth | `lib/auth.ts` |
+| 프로필 | 학습 목표, 설명 수준 (detailed/concise) | `app/api/user/profile/` |
+| UI | Shadcn UI + Tailwind, 반응형 모바일 | `components/ui/` |
+
+### ❌ 미구현 (v3.0 신규 개발)
+
+| 영역 | Feature |
+|------|---------|
+| XP & 레벨 시스템 | F3 |
+| Streak Freeze & Comeback Bonus | F4 |
+| 보물상자 (Variable Reward) | F5 |
+| 주간/월간 퀘스트 | F6 |
+| AI Pen Pal | F7 |
+| IAP (인앱 구매) | F12 확장 |
+| 입력 검증 | F1 확장 |
+
+### ⚠️ 수정 필요 (v2.0 → v3.0 변경)
+
+| 항목 | 현재 | v3.0 목표 |
+|------|------|----------|
+| 무료 교정 횟수 | 3회/일 | 1회/일 |
+| 구독 가격 | ₩9,900/월 | ₩6,900/월 |
+| 설명 수준 | 수동 선택 (detailed/concise) | XP 레벨 기반 자동 적응 |
+| AI 파이프라인 | LangGraph 체크포인트 + 대화 요약 | 프로필(장기 메모리)만 유지 |
+| 오답 분류 | 5-category | 3-category + sub_type |
+| 기록 조회 | 전체 무제한 | 무료 7일 / 프리미엄 전체 |
+| 표현노트 | 무제한 | 무료 20개 / 프리미엄 무제한 |
+
+### 🗑️ 제거 대상
+
+| 대상 | 파일 |
+|------|------|
+| 체크포인트 테이블 & 로직 | `lib/ai/checkpointer.ts` |
+| 대화 요약 | `lib/ai/summarizer.ts` |
+| 수동 레벨 선택 UI | `components/profile/level-selector.tsx` |
+| `chats.summary` 컬럼 | `db/schema.ts` |
+| `checkpoints` 테이블 | `db/schema.ts` |
 
 ---
 
-## 태스크 분석 프로세스
-
-### 1. 기능별 복잡도 평가
-
-| Feature | Complexity | Backend | Frontend | DB Schema | AI Logic |
-|---------|-----------|---------|----------|-----------|----------|
-| Feature 1: 학습 패턴 추적 | High | ⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ |
-| Feature 2: 개인화된 피드백 | Medium | ⭐⭐ | ⭐ | ⭐ | ⭐⭐⭐ |
-| Feature 3: 진도 대시보드 | Medium | ⭐⭐ | ⭐⭐⭐ | ⭐⭐ | ⭐ |
-| Feature 4: 능동적 복습 제안 | High | ⭐⭐⭐ | ⭐⭐ | ⭐ | ⭐⭐ |
-| Feature 5: 학습 레벨 자동 조정 | Medium | ⭐⭐ | ⭐⭐ | ⭐ | ⭐⭐⭐ |
-
-### 2. 의존성 분석
+## 2. 스프린트 구조
 
 ```
-Phase 1 (병렬 가능):
-├── Feature 1 (Foundation)
-│   ├── DB Schema 설계 (선행 필수)
-│   ├── Backend API (DB 의존)
-│   └── Frontend Integration (API 의존)
-├── Feature 2 (독립적)
-│   ├── AI Prompt 개선 (독립)
-│   └── Backend Integration (Feature 1 완료 후)
-└── Feature 3 (Feature 1, 2 의존)
-    ├── Stats Calculation API (Feature 1 완료 후)
-    └── Dashboard UI (API 의존)
-
-Phase 2 (Phase 1 완료 후):
-├── Feature 4 (Feature 1, 3 의존)
-└── Feature 5 (Feature 1 의존)
+Sprint 0  Foundation & Cleanup
+   │
+   ↓
+Sprint 1  XP & Level System ──────────────────┐
+   │                                            │ (XP 의존)
+   ↓                                            │
+Sprint 2  Streak Freeze & Comeback              │
+   │                                            │
+   ↓                                            ↓
+Sprint 3  Treasure Chest (XP + Freeze 보상 필요)
+   │
+   ↓
+Sprint 4  Weekly & Monthly Quests (XP 보상 필요)
+   │
+   ↓
+Sprint 5  AI Pen Pal (독립적, Sprint 1 이후 언제든 가능)
+   │
+   ↓
+Sprint 6  IAP & Monetization (모든 상품 존재 필요)
+   │
+   ↓
+Sprint 7  Integration & Polish
 ```
 
-### 3. 태스크 분류 기준
+### 병렬 실행 가능 구간
 
-- **Backend**: DB, API, 비즈니스 로직
-- **Frontend**: UI/UX, 클라이언트 로직
-- **Fullstack**: Backend + Frontend 통합 작업
-- **AI**: Prompt 엔지니어링, LangChain 설정
-- **DevOps**: 배포, 모니터링, 성능 최적화
+- Sprint 2 ↔ Sprint 4: 상호 독립 (동시 진행 가능)
+- Sprint 5: Sprint 1 이후 다른 sprint와 병렬 가능
 
 ---
 
-## Phase 1: MVP (8주)
-
-### Week 1-2: Foundation & DB Schema
-
-#### Task 1.1: Database Schema 설계 및 마이그레이션
-- **Category**: Backend
-- **Complexity**: Medium
-- **Priority**: P0 (Blocker)
-- **Estimated**: 8 hours
-- **Dependencies**: None
-
-**Description**:
-PRD 6.2에 정의된 3개 신규 테이블을 생성합니다.
-
-**Acceptance Criteria**:
-- [ ] `user_profiles` 테이블 생성 (level, learning_goal, recurring_mistakes)
-- [ ] `user_mistakes` 테이블 생성 (mistake_type, pattern, frequency, examples)
-- [ ] `learning_stats` 테이블 생성 (date, mistake_rate, mistake_breakdown)
-- [ ] Drizzle migration 파일 생성
-- [ ] `npm run db:migrate` 성공
-- [ ] 인덱스 생성 (user_id, date 등)
-
-**Files to Modify**:
-- `db/schema.ts` - 신규 테이블 정의
-- `drizzle/migrations/` - 마이그레이션 파일
-
-**Technical Notes**:
-```sql
--- user_mistakes 예시
-CREATE TABLE user_mistakes (
-  id UUID PRIMARY KEY,
-  user_id TEXT NOT NULL,
-  mistake_type TEXT NOT NULL,
-  sub_type TEXT,
-  pattern TEXT,
-  frequency INT DEFAULT 1,
-  examples JSONB DEFAULT '[]',
-  first_occurred TIMESTAMP DEFAULT NOW(),
-  last_occurred TIMESTAMP DEFAULT NOW(),
-  is_resolved BOOLEAN DEFAULT FALSE
-);
-```
+## 3. 스프린트 상세
 
 ---
 
-#### Task 1.2: User Profile 초기화 로직
-- **Category**: Backend
-- **Complexity**: Easy
-- **Priority**: P0
-- **Estimated**: 4 hours
-- **Dependencies**: Task 1.1
+### Sprint 0: Foundation & Cleanup
 
-**Description**:
-신규 사용자 생성 시 `user_profiles` 초기화 로직을 구현합니다.
+> **목표**: DB 스키마 마이그레이션, deprecated 코드 제거, 정책 변경 적용. 사용자 체감 변화 최소.
 
-**Acceptance Criteria**:
-- [ ] 첫 메시지 전송 시 user_profile 자동 생성
-- [ ] 기본 레벨 'intermediate' 설정
-- [ ] recurring_mistakes 빈 배열로 초기화
-- [ ] user_id는 기존 chats.userId 재사용
+#### 태스크
 
-**Files to Create/Modify**:
-- `lib/db/user-profile.ts` - 프로필 관리 함수
-- `app/api/chat/route.ts` - 프로필 초기화 호출
+| # | 태스크 | 유형 | 상세 |
+|---|--------|------|------|
+| 0-1 | DB 마이그레이션 Phase 1 (ADD) | Backend | `user_profiles`: xp, xp_level, title, equipped_title, earned_titles, streak_freeze_count, xp_booster_expires_at, chest_key_count 추가. `chats`: mood, word_count, challenge_word_used 추가. `diary_streaks`: previous_streak, streak_freeze_used_at, comeback_started_at, comeback_days 추가. `daily_usage`: bonus_count 추가. `messages`: role enum에 'penpal' 추가. `user_mistakes`: sub_type 추가 |
+| 0-2 | DB 마이그레이션 Phase 2 (CREATE) | Backend | 7개 신규 테이블 생성: xp_history, treasure_chest_log, weekly_quests, user_quest_progress, monthly_challenges, user_challenge_progress, iap_purchases |
+| 0-3 | DB 데이터 마이그레이션 Phase 3 | Backend | user_profiles.level 값 → learning_preferences 이관. user_mistakes.mistake_type 값 매핑 |
+| 0-4 | DB 마이그레이션 Phase 4 (DROP) | Backend | DROP TABLE checkpoints. DROP COLUMN chats.summary, user_profiles.level (old enum). ALTER user_mistakes.mistake_type enum |
+| 0-5 | Deprecated 코드 제거 | Backend | `lib/ai/checkpointer.ts` 삭제. `lib/ai/summarizer.ts` 삭제. `components/profile/level-selector.tsx` 삭제. `lib/ai/graph.ts`에서 체크포인트/요약 호출 제거 |
+| 0-6 | AI 파이프라인 정리 | Backend | `lib/ai/graph.ts`: 체크포인트/요약 의존성 제거 후 교정 동작 확인. 프롬프트에서 detailed/concise 분기 제거 (임시로 detailed 기본값 통일) |
+| 0-7 | 입력 검증 추가 | Frontend | `components/diary/diary-editor.tsx`: 빈 텍스트 → 버튼 비활성화, 최소 20자, 최소 5단어, 반복 문자 5회, 반복 단어 70% |
+| 0-8 | 구독 가격 변경 | Backend + Frontend | `lib/payment/toss.ts`: ₩9,900 → ₩6,900. `app/pricing/page.tsx`: 가격 표시 업데이트 |
 
----
+> **⚠️ 무료 교정 3→1 축소는 이 시점에서 코드만 준비하고, 실제 적용은 Sprint 3 (보물상자) 배포와 동시에.** 게이미피케이션 없이 무료 횟수만 줄이면 이탈 위험.
 
-### Week 2-3: Feature 1 - 학습 패턴 추적
+#### 완료 조건
 
-#### Task 1.3: AI 실수 분류 로직
-- **Category**: AI
-- **Complexity**: Hard
-- **Priority**: P0
-- **Estimated**: 12 hours
-- **Dependencies**: Task 1.1
+- [ ] `drizzle-kit generate` + `drizzle-kit migrate` 성공
+- [ ] 기존 기능 (교정, 스트릭, 캘린더, 표현노트, 기록 조회) 정상 동작
+- [ ] deprecated 코드 삭제 후 `npm run build` 에러 없음
+- [ ] 입력 검증 규칙 5종 동작
+- [ ] 가격 ₩6,900 반영
 
-**Description**:
-Gemini AI가 실수 유형을 자동 분류하도록 프롬프트를 개선합니다.
+#### 영향 받는 파일
 
-**Acceptance Criteria**:
-- [ ] 교정 응답에 `mistakeType` 필드 추가
-  - Grammar: tense, subject_verb_agreement, preposition, article, etc.
-  - Vocabulary: word_choice, collocation
-  - Style: formality, clarity
-- [ ] Zod schema에 `mistakeType` 정의
-- [ ] AI 응답 JSON 포맷 검증
-- [ ] 분류 정확도 85% 이상 (수동 샘플링 검증)
-
-**Files to Modify**:
-- `lib/ai/schema.ts` - mistakeType enum 추가
-- `lib/ai/graph.ts` - AI 프롬프트에 분류 지시 추가
-
-**Prompt Example**:
 ```
-Additionally, classify the mistake type:
-- If it's a grammar error, specify: tense, preposition, article, etc.
-- If it's vocabulary, specify: word_choice, collocation
-- If it's style, specify: formality, clarity
-
-Return in JSON: { ..., "mistakeType": "grammar:preposition" }
+db/schema.ts                              — 스키마 전면 수정
+lib/ai/graph.ts                           — 체크포인트/요약 제거
+lib/ai/checkpointer.ts                    — 삭제
+lib/ai/summarizer.ts                      — 삭제
+components/profile/level-selector.tsx      — 삭제
+components/diary/diary-editor.tsx          — 입력 검증 추가
+lib/payment/toss.ts                       — 가격 변경
+app/pricing/page.tsx                      — 가격 표시 변경
 ```
 
 ---
 
-#### Task 1.4: 실수 패턴 저장 API
-- **Category**: Backend
-- **Complexity**: Medium
-- **Priority**: P0
-- **Estimated**: 8 hours
-- **Dependencies**: Task 1.3
+### Sprint 1: XP & Level System (F3)
 
-**Description**:
-교정 시 실수 패턴을 `user_mistakes` 테이블에 저장하는 API를 구현합니다.
+> **목표**: 모든 게이미피케이션의 근간. 일기 제출 시 XP 획득 → 레벨업 → 레벨 기반 적응형 설명.
 
-**Acceptance Criteria**:
-- [ ] 교정 완료 후 실수 유형 DB 저장
-- [ ] 기존 패턴 존재 시 `frequency++` 및 `last_occurred` 업데이트
-- [ ] 신규 패턴 시 새 레코드 생성
-- [ ] examples 배열에 최대 5개까지 저장 (FIFO)
-- [ ] 트랜잭션 처리로 데이터 일관성 보장
+**선행**: Sprint 0
 
-**Files to Create/Modify**:
-- `lib/db/mistakes.ts` - 실수 패턴 저장/업데이트 함수
-- `app/api/chat/route.ts` - 교정 후 mistakes 저장 호출
+#### 태스크
 
-**Example Function**:
-```typescript
-async function saveMistakePattern({
-  userId,
-  mistakeType,
-  pattern,
-  example
-}: MistakePatternInput) {
-  const existing = await db.select().from(userMistakes)
-    .where(and(
-      eq(userMistakes.userId, userId),
-      eq(userMistakes.pattern, pattern)
-    ));
+| # | 태스크 | 유형 | 상세 |
+|---|--------|------|------|
+| 1-1 | XP 상수 & 레벨 계산 | Backend | `lib/gamification/xp-constants.ts`: XP 보상 테이블, 레벨 구간 (누적 XP → 레벨), 칭호 매핑. 로그 곡선 레벨업 threshold 계산 함수 |
+| 1-2 | XP Service | Backend | `lib/gamification/xp-service.ts`: `grantXp(userId, action, referenceId?)` — XP 부여 + xp_history INSERT + user_profiles.xp 갱신 + 레벨업 판정 + 부스터 2x 체크. 트랜잭션 원자성 보장 |
+| 1-3 | 교정 Flow XP 연동 | Backend | `app/api/chat/route.ts`: 교정 완료 후 diary_submit +30 XP. 챌린지 단어 사용 시 challenge_word +15 XP. 오답 0개 시 perfect_diary +20 XP |
+| 1-4 | 표현노트 XP 연동 | Backend | `app/api/vocabulary/route.ts`: POST 성공 시 expression_save +5 XP |
+| 1-5 | 스트릭 마일스톤 XP | Backend | `lib/streak/streak-manager.ts`: 7일 달성 시 streak_7d +100 XP. 30일 달성 시 streak_30d +500 XP (각 1회) |
+| 1-6 | 레벨 기반 적응형 프롬프트 | AI | `lib/ai/graph.ts`: user_profiles.xp_level 조회 → Lv.1-10 한국어 70-90% / Lv.11-20 50-70% / Lv.21+ 30-50% 프롬프트 분기 |
+| 1-7 | 무료 Lv.10 상한 | Backend | xp-service: 무료 사용자 Lv.10 초과 시 XP 누적하되 레벨 고정. 프리미엄 전환 시 즉시 레벨 반영 |
+| 1-8 | XP API | Backend | `GET /api/user/xp` — 현재 XP, 레벨, 칭호, 다음 레벨까지 남은 XP, 부스터 상태 |
+| 1-9 | 헤더 레벨 UI | Frontend | 헤더에 레벨 뱃지 + 칭호 + 프로그레스 바 (다음 레벨까지 남은 XP) |
+| 1-10 | 레벨업 연출 | Frontend | 레벨업 시 축하 모달: 새 칭호 + XP 획득 애니메이션 |
+| 1-11 | XP 토스트 | Frontend | 일기 제출 후 "+30 XP" 토스트. 부스터 시 "+60 XP (2x)" |
+| 1-12 | Lv.10 상한 안내 | Frontend | 무료 Lv.10 도달 시 "더 높은 레벨에 도전하세요" 프리미엄 안내 모달 |
 
-  if (existing.length > 0) {
-    // Update frequency
-    await db.update(userMistakes)
-      .set({
-        frequency: existing[0].frequency + 1,
-        lastOccurred: new Date()
-      });
-  } else {
-    // Create new
-    await db.insert(userMistakes).values({...});
-  }
-}
+#### 완료 조건
+
+- [ ] 일기 제출 → XP 획득 → xp_history 기록
+- [ ] 레벨업 정상 동작 (Lv.1 → ... → Lv.30)
+- [ ] 무료 Lv.10 상한 동작
+- [ ] 레벨 기반 AI 설명 깊이 변화 확인
+- [ ] 헤더 레벨/칭호/진행바 표시
+- [ ] 레벨업 축하 모달 동작
+
+#### 신규 파일
+
+```
+lib/gamification/xp-constants.ts          — XP 보상/레벨 상수
+lib/gamification/xp-service.ts            — XP 부여 비즈니스 로직
+app/api/user/xp/route.ts                  — XP 조회 API
+components/gamification/level-badge.tsx    — 레벨 뱃지 컴포넌트
+components/gamification/levelup-modal.tsx  — 레벨업 모달
+components/gamification/xp-toast.tsx       — XP 획득 토스트
 ```
 
 ---
 
-#### Task 1.5: 반복 패턴 감지 로직
-- **Category**: Backend
-- **Complexity**: Medium
-- **Priority**: P1
-- **Estimated**: 6 hours
-- **Dependencies**: Task 1.4
+### Sprint 2: Streak Freeze & Comeback Bonus (F4)
 
-**Description**:
-동일 패턴이 3회 이상 반복되면 "Insight" 메시지를 생성합니다.
+> **목표**: 기존 스트릭에 보호막과 복귀 보너스를 추가하여 이탈 방지.
 
-**Acceptance Criteria**:
-- [ ] 교정 시 최근 7일 내 동일 패턴 빈도 조회
-- [ ] 빈도 >= 3회 시 insight 메시지 생성
-- [ ] insight에 간단한 규칙 요약 포함 (AI 생성)
-- [ ] 응답 JSON에 `insight` 필드 추가 (optional)
+**선행**: Sprint 0, Sprint 1 (XP 부여)
 
-**Files to Modify**:
-- `lib/db/mistakes.ts` - 패턴 빈도 조회 함수
-- `lib/ai/graph.ts` - insight 생성 로직 추가
-- `lib/ai/schema.ts` - insight 필드 추가
+#### 태스크
+
+| # | 태스크 | 유형 | 상세 |
+|---|--------|------|------|
+| 2-1 | Streak Manager 리팩토링 | Backend | `lib/streak/streak-manager.ts` 전면 수정: Freeze 자동 소비, Comeback 자격 판정, previous_streak 저장, comeback_days 추적 |
+| 2-2 | Freeze 소비 로직 | Backend | gap==2 + freeze_count>0 → freeze 자동 소비 (streak_freeze_count -1, streak_freeze_used_at = yesterday), streak 유지 |
+| 2-3 | Comeback Bonus 로직 | Backend | 3일+ 미접속 후 복귀 → Welcome Back 50 XP. 리셋 후 3일 연속 → Comeback Kid 칭호 + 100 XP. 7일 연속 → previous_streak * 0.5 복구 |
+| 2-4 | Streak API 확장 | Backend | `GET /api/streak`: freeze_count, comeback 상태 포함 |
+| 2-5 | Freeze 보유 UI | Frontend | 헤더 불꽃 옆 방패 아이콘 + 보유 수 (0/1/2) |
+| 2-6 | Freeze 사용 알림 | Frontend | "보호막이 사용되었어요! 남은 보호막: N개" 토스트 |
+| 2-7 | Welcome Back 카드 | Frontend | 복귀 시 "Welcome Back" 카드 + 50 XP 연출 |
+| 2-8 | Comeback Kid 연출 | Frontend | 리셋 후 3일 연속 시 "Comeback Kid" 칭호 획득 모달 |
+
+#### 완료 조건
+
+- [ ] Freeze 자동 소비 → 스트릭 유지 동작
+- [ ] Freeze 0개 + 공백 → 스트릭 리셋 + previous_streak 저장
+- [ ] Welcome Back 50 XP 동작
+- [ ] Comeback Kid 칭호 + 100 XP 동작
+- [ ] 7일 연속 → previous_streak 50% 복구
+- [ ] 방패 아이콘 + 보유 수 표시
 
 ---
 
-#### Task 1.6: 프론트엔드 Insight 표시
-- **Category**: Frontend
-- **Complexity**: Easy
-- **Priority**: P1
-- **Estimated**: 4 hours
-- **Dependencies**: Task 1.5
+### Sprint 3: Treasure Chest — Variable Reward (F5)
 
-**Description**:
-교정 결과 하단에 Insight 메시지를 표시합니다.
+> **목표**: 매일 첫 일기 시 랜덤 보상으로 "오늘은 뭐가 나올까?" 기대감 생성. 프리미엄 핵심 가치.
 
-**Acceptance Criteria**:
-- [ ] insight 필드 존재 시 별도 섹션 렌더링
-- [ ] 💡 아이콘 + 노란색 배경 Alert 컴포넌트 사용
-- [ ] "연습 문제 풀기" 버튼 제공 (Phase 2에서 구현)
-- [ ] 모바일 반응형 디자인
+**선행**: Sprint 1 (XP), Sprint 2 (Streak Freeze)
 
-**Files to Modify**:
-- `components/chat/correction-card.tsx` - Insight 섹션 추가
-- `components/ui/alert.tsx` - Shadcn Alert 활용
+#### 태스크
 
-**UI Example**:
-```tsx
-{correction.insight && (
-  <Alert className="mt-4 bg-yellow-50 border-yellow-200">
-    <Lightbulb className="h-4 w-4" />
-    <AlertTitle>💡 Insight</AlertTitle>
-    <AlertDescription>
-      {correction.insight}
-      <Button variant="link" className="mt-2">
-        연습 문제 풀기 →
-      </Button>
-    </AlertDescription>
-  </Alert>
-)}
+| # | 태스크 | 유형 | 상세 |
+|---|--------|------|------|
+| 3-1 | 보상 결정 엔진 | Backend | `lib/gamification/treasure-chest.ts`: 확률 기반 보상 결정 (서버). XP 40%, 명언 25%, 희귀 표현 20%, Freeze 10%, 레어 칭호 5%. Freeze 상한 초과 시 XP 대체 |
+| 3-2 | 보물상자 Open API | Backend | `POST /api/treasure-chest/open` — 프리미엄 확인, 오늘 이미 열었는지 확인, 보상 결정 + treasure_chest_log INSERT + 사이드이펙트 (XP 부여, Freeze 추가, 칭호 추가, 표현노트 자동 추가) |
+| 3-3 | 보물상자 열쇠 API | Backend | `POST /api/treasure-chest/open-with-key` — chest_key_count 차감 + 보상 결정 |
+| 3-4 | 보물상자 이력 API | Backend | `GET /api/treasure-chest/history` — 최근 7일 보상 목록 |
+| 3-5 | 교정 Flow 연동 | Backend | `app/api/chat/route.ts`: 프리미엄 + 당일 첫 교정 시 보물상자 자동 트리거 |
+| 3-6 | 오픈 애니메이션 | Frontend | 상자 흔들림 → 열림 → 보상 카드 등장. 등급별 테두리 (일반/레어/에픽) |
+| 3-7 | 보상 카드 컴포넌트 | Frontend | XP 보너스, 명언 카드 (공유), 희귀 표현 카드, Freeze 획득, 레어 칭호 |
+| 3-8 | 보상 이력 UI | Frontend | 최근 7일 보상 목록 |
+| 3-9 | 무료 사용자 티저 | Frontend | 교정 결과 하단에 흐릿한 보물상자 + "프리미엄에서 열어보세요" |
+| 3-10 | **무료 교정 3→1 적용** | Backend | `lib/subscription/check-usage.ts`: 이 시점에서 무료 교정 1회/일로 실제 변경 |
+
+> **3-10**: 보물상자가 프리미엄의 핵심 가치로 자리잡은 시점에 무료 교정 축소를 함께 배포. "재미 요소에 과금" 전략의 핵심.
+
+#### 완료 조건
+
+- [ ] 프리미엄 첫 일기 → 보물상자 자동 오픈
+- [ ] 5종 보상 정상 지급
+- [ ] Freeze 상한 초과 시 XP 대체
+- [ ] 오픈 애니메이션 동작
+- [ ] 무료 사용자: 블러 티저
+- [ ] 최근 7일 이력 조회
+- [ ] 무료 교정 1회/일 적용
+
+#### 신규 파일
+
+```
+lib/gamification/treasure-chest.ts              — 보상 결정 엔진
+app/api/treasure-chest/open/route.ts            — 보물상자 오픈 API
+app/api/treasure-chest/open-with-key/route.ts   — 열쇠로 오픈 API
+app/api/treasure-chest/history/route.ts         — 이력 조회 API
+components/gamification/chest-animation.tsx      — 오픈 애니메이션
+components/gamification/reward-card.tsx          — 보상 카드
+components/gamification/chest-teaser.tsx         — 무료 사용자 티저
 ```
 
 ---
 
-### Week 3-4: Feature 2 - 개인화된 피드백
+### Sprint 4: Weekly & Monthly Quests (F6)
 
-#### Task 2.1: 사용자 레벨 관리 시스템
-- **Category**: Backend
-- **Complexity**: Easy
-- **Priority**: P1
-- **Estimated**: 4 hours
-- **Dependencies**: Task 1.2
+> **목표**: 주간/월간 미니 목표로 "매일 일기" 외 부가 동기 부여.
 
-**Description**:
-사용자 레벨(beginner, intermediate, advanced)을 설정하고 조회하는 API를 구현합니다.
+**선행**: Sprint 1 (XP)
 
-**Acceptance Criteria**:
-- [ ] `GET /api/user/profile` - 레벨 조회
-- [ ] `POST /api/user/profile` - 레벨 업데이트
-- [ ] 기본 레벨은 'intermediate'
-- [ ] 레벨 변경 이력 로깅
+#### 태스크
 
-**Files to Create**:
-- `app/api/user/profile/route.ts` - Profile CRUD API
+| # | 태스크 | 유형 | 상세 |
+|---|--------|------|------|
+| 4-1 | 주간 퀘스트 생성 | Backend | `lib/gamification/quest-scheduler.ts`: lazy generation — 조회 시 해당 주 퀘스트 없으면 5종 풀에서 3개 선택 → weekly_quests INSERT |
+| 4-2 | 퀘스트 진행률 추적 | Backend | `lib/gamification/quest-tracker.ts`: 일기 제출/표현노트 저장/챌린지 단어 사용 이벤트 시 current_count 갱신. target_count 도달 → completed + XP 부여 |
+| 4-3 | 주간 보너스 판정 | Backend | 동일 주 3개 중 2개+ 완료 시 weekly_bonus +100 XP |
+| 4-4 | 월간 챌린지 데이터 | Backend | monthly_challenges 시드 데이터 관리. 일기에서 표현 사용 감지 → used_expressions 업데이트 |
+| 4-5 | 퀘스트 API | Backend | `GET /api/quests/weekly` — 이번 주 퀘스트 + 진행률 (무료: slot 1만). `GET /api/quests/monthly` — 이번 달 챌린지 + 진행률 (Pro only) |
+| 4-6 | 이벤트 통합 | Backend | chat route, vocabulary route: 교정/표현저장 시 quest-tracker 호출 |
+| 4-7 | 퀘스트 목록 UI | Frontend | 활성 퀘스트 카드: 설명 + 진행 바 + XP 보상. 무료: 비활성 퀘스트에 자물쇠 |
+| 4-8 | 퀘스트 완료 연출 | Frontend | 퀘스트 완료 → XP 획득 애니메이션 + 체크마크 |
+| 4-9 | 주간 보너스 연출 | Frontend | 2/3 완료 시 "주간 보너스 +100 XP" 배너 |
+| 4-10 | 월간 챌린지 UI | Frontend | 이번 달 테마 + 10개 표현 체크리스트 |
 
----
+#### 완료 조건
 
-#### Task 2.2: Adaptive Prompting 구현
-- **Category**: AI
-- **Complexity**: Hard
-- **Priority**: P0
-- **Estimated**: 10 hours
-- **Dependencies**: Task 2.1, Task 1.4
+- [ ] 매주 퀘스트 3개 자동 생성 (lazy)
+- [ ] 교정/표현저장 시 퀘스트 진행률 자동 갱신
+- [ ] 무료: 1개만 활성. 프리미엄: 3개 + 월간
+- [ ] 주간 보너스 (2/3 완료 → +100 XP)
+- [ ] 퀘스트 UI + 진행 바 + 완료 연출
 
-**Description**:
-사용자 레벨과 최근 실수 패턴을 AI 프롬프트에 주입합니다.
+#### 신규 파일
 
-**Acceptance Criteria**:
-- [ ] 교정 요청 시 user_profile 조회
-- [ ] 최근 7일 내 실수 패턴 조회 (빈도 TOP 3)
-- [ ] System Prompt에 컨텍스트 추가:
-  ```
-  User Profile:
-  - Level: Intermediate
-  - Recent Mistakes: prepositions (5x), articles (3x)
-  - Learning Goal: Business email writing
-  ```
-- [ ] 레벨별 응답 톤 차별화 테스트
-
-**Files to Modify**:
-- `lib/ai/graph.ts` - Adaptive prompt 생성 함수
-- `lib/db/mistakes.ts` - 최근 실수 조회 함수
-
----
-
-#### Task 2.3: 레벨별 설명 검증
-- **Category**: QA
-- **Complexity**: Easy
-- **Priority**: P2
-- **Estimated**: 4 hours
-- **Dependencies**: Task 2.2
-
-**Description**:
-초급/중급/고급 사용자에게 동일 실수를 테스트하여 응답 차이를 검증합니다.
-
-**Acceptance Criteria**:
-- [ ] 테스트 케이스 10개 작성 (초급 3, 중급 4, 고급 3)
-- [ ] 각 레벨별 설명 길이/톤/예제 수 비교
-- [ ] 문서화: `docs/ai-response-examples.md`
-
----
-
-### Week 4-6: Feature 3 - 진도 대시보드
-
-#### Task 3.1: 학습 통계 계산 API
-- **Category**: Backend
-- **Complexity**: Medium
-- **Priority**: P1
-- **Estimated**: 8 hours
-- **Dependencies**: Task 1.4
-
-**Description**:
-주간/월간 실수율, 향상 영역, 약점 영역을 계산하는 API를 구현합니다.
-
-**Acceptance Criteria**:
-- [ ] `GET /api/dashboard/stats?period=week|month`
-- [ ] 응답 포맷:
-  ```json
-  {
-    "mistakeRateTrend": [
-      { "week": 1, "rate": 30 },
-      { "week": 2, "rate": 25 },
-      ...
-    ],
-    "topImprovements": [
-      { "area": "prepositions", "improvement": 40 }
-    ],
-    "weakAreas": [
-      { "area": "irregular_verbs", "frequency": 5 }
-    ],
-    "totalStats": {
-      "totalCorrections": 217,
-      "activeDays": 28,
-      "streakDays": 12
-    }
-  }
-  ```
-- [ ] 캐싱 전략 (1시간 TTL)
-
-**Files to Create**:
-- `app/api/dashboard/stats/route.ts` - Stats API
-- `lib/db/stats.ts` - 통계 계산 함수
-
----
-
-#### Task 3.2: 대시보드 페이지 생성
-- **Category**: Frontend
-- **Complexity**: Medium
-- **Priority**: P1
-- **Estimated**: 12 hours
-- **Dependencies**: Task 3.1
-
-**Description**:
-사용자 학습 통계를 시각화하는 대시보드 페이지를 구현합니다.
-
-**Acceptance Criteria**:
-- [ ] `/dashboard` 경로 생성
-- [ ] Recharts로 주간 실수율 그래프
-- [ ] 강점/약점 TOP 3 Badge 표시
-- [ ] 총 통계 카드 (교정 횟수, 활동 일수, 연속 학습)
-- [ ] 모바일 반응형
-- [ ] 로딩 상태 처리
-
-**Files to Create**:
-- `app/dashboard/page.tsx` - 대시보드 페이지
-- `components/dashboard/stats-chart.tsx` - 차트 컴포넌트
-- `components/dashboard/improvement-badges.tsx` - Badge 컴포넌트
-
-**UI Libraries**:
-- Recharts (Line Chart)
-- Shadcn Badge, Card, Progress
-
----
-
-#### Task 3.3: 네비게이션 통합
-- **Category**: Frontend
-- **Complexity**: Easy
-- **Priority**: P2
-- **Estimated**: 2 hours
-- **Dependencies**: Task 3.2
-
-**Description**:
-메인 레이아웃에 대시보드 링크를 추가합니다.
-
-**Acceptance Criteria**:
-- [ ] 사이드바/헤더에 "대시보드" 메뉴 추가
-- [ ] 현재 페이지 강조 표시
-- [ ] 모바일 메뉴에도 포함
-
-**Files to Modify**:
-- `app/layout.tsx` - 네비게이션 추가
-
----
-
-### Week 7-8: Integration & Testing
-
-#### Task 3.4: End-to-End 테스트
-- **Category**: QA
-- **Complexity**: Medium
-- **Priority**: P0
-- **Estimated**: 8 hours
-- **Dependencies**: All Phase 1 tasks
-
-**Description**:
-MVP 전체 플로우를 테스트합니다.
-
-**Test Scenarios**:
-1. 신규 사용자 온보딩
-2. 3회 동일 실수 → Insight 표시
-3. 대시보드 통계 정확성
-4. 레벨별 피드백 차이
-
-**Acceptance Criteria**:
-- [ ] 모든 시나리오 통과
-- [ ] 버그 리스트 작성 및 수정
-- [ ] 성능 테스트 (응답 시간 < 3초)
-
----
-
-#### Task 3.5: MVP 배포
-- **Category**: DevOps
-- **Complexity**: Easy
-- **Priority**: P0
-- **Estimated**: 4 hours
-- **Dependencies**: Task 3.4
-
-**Description**:
-Vercel에 MVP를 배포하고 모니터링을 설정합니다.
-
-**Acceptance Criteria**:
-- [ ] Vercel Production 배포
-- [ ] 환경 변수 설정 확인
-- [ ] DB 마이그레이션 실행
-- [ ] Sentry 또는 Vercel Analytics 연동
-- [ ] 배포 URL 공유
-
----
-
-## Phase 2: Proactive Learning (8주)
-
-### Week 9-10: Feature 4 - 능동적 복습 제안
-
-#### Task 4.1: 복습 자료 생성 API
-- **Category**: Backend + AI
-- **Complexity**: Hard
-- **Priority**: P1
-- **Estimated**: 10 hours
-- **Dependencies**: Task 1.4
-
-**Description**:
-사용자의 약점 패턴 기반으로 퀴즈 형식 복습 자료를 생성합니다.
-
-**Acceptance Criteria**:
-- [ ] `POST /api/review/generate`
-  - Body: `{ mistakeType: 'preposition', count: 5 }`
-  - Response: 퀴즈 5개 (문제, 정답, 해설)
-- [ ] AI가 사용자의 실수 예시를 기반으로 유사 문제 생성
-- [ ] 난이도는 사용자 레벨 반영
-
-**Files to Create**:
-- `app/api/review/generate/route.ts`
-- `lib/ai/review-generator.ts`
-
----
-
-#### Task 4.2: 복습 알림 스케줄러
-- **Category**: Backend
-- **Complexity**: Medium
-- **Priority**: P1
-- **Estimated**: 8 hours
-- **Dependencies**: Task 4.1
-
-**Description**:
-특정 조건 충족 시 복습 알림을 생성하는 배치 작업을 구현합니다.
-
-**Triggers**:
-1. 동일 패턴 5회 반복
-2. 5일간 미사용
-3. 주간 리포트 (일요일)
-
-**Acceptance Criteria**:
-- [ ] Vercel Cron Job 설정 (`vercel.json`)
-- [ ] 알림 대상 사용자 조회 로직
-- [ ] 알림 데이터 DB 저장 (`notifications` 테이블)
-- [ ] 이메일 발송 (Resend 또는 SendGrid)
-
-**Files to Create**:
-- `app/api/cron/review-reminder/route.ts`
-- `lib/email/review-reminder-template.tsx`
-
----
-
-#### Task 4.3: 복습 UI (모달)
-- **Category**: Frontend
-- **Complexity**: Medium
-- **Priority**: P1
-- **Estimated**: 8 hours
-- **Dependencies**: Task 4.1
-
-**Description**:
-Insight 메시지의 "연습 문제 풀기" 버튼 클릭 시 모달로 퀴즈를 표시합니다.
-
-**Acceptance Criteria**:
-- [ ] Shadcn Dialog로 모달 구현
-- [ ] 퀴즈 5문제 순차 표시
-- [ ] 정답/오답 즉시 피드백
-- [ ] 완료 후 결과 요약 (5/5 정답)
-
-**Files to Create**:
-- `components/review/review-modal.tsx`
-- `components/review/quiz-card.tsx`
-
----
-
-#### Task 4.4: 알림 센터 UI
-- **Category**: Frontend
-- **Complexity**: Easy
-- **Priority**: P2
-- **Estimated**: 4 hours
-- **Dependencies**: Task 4.2
-
-**Description**:
-헤더에 알림 아이콘과 드롭다운을 추가합니다.
-
-**Acceptance Criteria**:
-- [ ] Bell 아이콘 + 미읽음 배지
-- [ ] 드롭다운으로 최근 알림 5개 표시
-- [ ] 클릭 시 복습 모달 또는 대시보드 이동
-
-**Files to Modify**:
-- `app/layout.tsx` - 알림 아이콘 추가
-- `components/notifications/notification-dropdown.tsx`
-
----
-
-### Week 11-12: Feature 5 - 학습 레벨 자동 조정
-
-#### Task 5.1: 초기 레벨 테스트
-- **Category**: Fullstack
-- **Complexity**: Medium
-- **Priority**: P1
-- **Estimated**: 10 hours
-- **Dependencies**: None
-
-**Description**:
-신규 사용자 온보딩 시 5문제 레벨 테스트를 제공합니다.
-
-**Acceptance Criteria**:
-- [ ] 온보딩 페이지 `/onboarding` 생성
-- [ ] 문법/어휘/스타일 복합 문제 5개
-- [ ] 2분 타이머 (선택 사항)
-- [ ] 정답률로 레벨 판정:
-  - 0-2개: Beginner
-  - 3-4개: Intermediate
-  - 5개: Advanced
-- [ ] 판정 결과 DB 저장
-
-**Files to Create**:
-- `app/onboarding/page.tsx`
-- `components/onboarding/level-test.tsx`
-- `lib/onboarding/test-questions.ts`
-
----
-
-#### Task 5.2: 레벨 재조정 로직
-- **Category**: Backend
-- **Complexity**: Medium
-- **Priority**: P1
-- **Estimated**: 6 hours
-- **Dependencies**: Task 5.1
-
-**Description**:
-매주 일요일 자동으로 사용자 레벨을 재평가합니다.
-
-**Algorithm**:
 ```
-if (이번 주 실수율 < 지난 주 - 10%) {
-  level++;
-} else if (신규 실수 유형 > 3개) {
-  level = 유지;
-}
-```
-
-**Acceptance Criteria**:
-- [ ] Cron Job: 매주 일요일 00:00
-- [ ] 전체 활성 사용자 레벨 재평가
-- [ ] 레벨 변경 시 알림 생성
-- [ ] 레벨 변경 이력 로깅
-
-**Files to Create**:
-- `app/api/cron/level-adjustment/route.ts`
-- `lib/level/adjustment-algorithm.ts`
-
----
-
-#### Task 5.3: 레벨 변경 알림 UI
-- **Category**: Frontend
-- **Complexity**: Easy
-- **Priority**: P2
-- **Estimated**: 3 hours
-- **Dependencies**: Task 5.2
-
-**Description**:
-레벨이 올라간 사용자에게 축하 메시지를 표시합니다.
-
-**Acceptance Criteria**:
-- [ ] 로그인 시 레벨 변경 체크
-- [ ] 변경 시 Toast 또는 Modal로 축하 메시지
-- [ ] "🎉 축하합니다! Intermediate → Advanced로 승급하셨어요!"
-
-**Files to Modify**:
-- `app/layout.tsx` - 레벨 변경 체크
-- `components/ui/toast.tsx` - Shadcn Toast 활용
-
----
-
-### Week 13-14: Phase 2 통합
-
-#### Task 5.4: Phase 2 E2E 테스트
-- **Category**: QA
-- **Complexity**: Medium
-- **Priority**: P0
-- **Estimated**: 6 hours
-- **Dependencies**: All Phase 2 tasks
-
-**Test Scenarios**:
-1. 5일 미사용 → 이메일 수신
-2. 퀴즈 완료 → 정답률 저장
-3. 레벨 자동 조정 → 알림 표시
-
----
-
-#### Task 5.5: 성능 최적화
-- **Category**: DevOps
-- **Complexity**: Medium
-- **Priority**: P1
-- **Estimated**: 8 hours
-- **Dependencies**: Task 5.4
-
-**Optimization Areas**:
-- [ ] DB 쿼리 최적화 (인덱스 추가)
-- [ ] API 응답 캐싱 (Redis 또는 In-memory)
-- [ ] 대시보드 그래프 Lazy Loading
-- [ ] 이미지 최적화
-
----
-
-## Phase 3: Enhancement & Scale (8주)
-
-### Week 15-18: 고급 기능
-
-#### Task 6.1: 대시보드 고도화
-- **Category**: Fullstack
-- **Estimated**: 16 hours
-
-**Features**:
-- 사용자가 월간 목표 설정 (예: "전치사 실수 50% 감소")
-- 목표 달성률 표시
-- 친구 비교 (선택 사항)
-
----
-
-#### Task 6.2: 음성 피드백 (TTS)
-- **Category**: Frontend
-- **Estimated**: 8 hours
-
-**Features**:
-- 교정된 문장을 Web Speech API로 읽어주기
-- 발음 속도 조절
-
----
-
-#### Task 6.3: 커뮤니티 기능
-- **Category**: Fullstack
-- **Estimated**: 20 hours
-
-**Features**:
-- 학습 그룹 생성
-- 주간 챌린지 (예: "이번 주 실수 0개 도전")
-- 리더보드
-
----
-
-### Week 19-22: 스케일링 & 모니터링
-
-#### Task 7.1: A/B 테스트 프레임워크
-- **Category**: DevOps
-- **Estimated**: 12 hours
-
-**Features**:
-- Vercel Analytics A/B Testing
-- 무료 교정 횟수 (10회 vs 5회) 테스트
-- 전환율 비교
-
----
-
-#### Task 7.2: 사용자 피드백 시스템
-- **Category**: Fullstack
-- **Estimated**: 8 hours
-
-**Features**:
-- "이 분류가 정확한가요?" Yes/No 버튼
-- 피드백 데이터 수집 및 분석
-- 프롬프트 개선에 활용
-
----
-
-#### Task 7.3: 고급 모니터링
-- **Category**: DevOps
-- **Estimated**: 6 hours
-
-**Features**:
-- Sentry Error Tracking
-- Vercel Analytics (Core Web Vitals)
-- Custom Metrics (실수율, 전환율, Retention)
-
----
-
-## 태스크 분해 요약
-
-### Phase 1 (MVP) - 16개 태스크
-
-| # | Task | Category | Complexity | Priority | Est. Hours |
-|---|------|----------|-----------|----------|-----------|
-| 1.1 | DB Schema 설계 | Backend | Medium | P0 | 8 |
-| 1.2 | User Profile 초기화 | Backend | Easy | P0 | 4 |
-| 1.3 | AI 실수 분류 | AI | Hard | P0 | 12 |
-| 1.4 | 실수 패턴 저장 API | Backend | Medium | P0 | 8 |
-| 1.5 | 반복 패턴 감지 | Backend | Medium | P1 | 6 |
-| 1.6 | Insight 표시 UI | Frontend | Easy | P1 | 4 |
-| 2.1 | 레벨 관리 시스템 | Backend | Easy | P1 | 4 |
-| 2.2 | Adaptive Prompting | AI | Hard | P0 | 10 |
-| 2.3 | 레벨별 설명 검증 | QA | Easy | P2 | 4 |
-| 3.1 | 통계 계산 API | Backend | Medium | P1 | 8 |
-| 3.2 | 대시보드 페이지 | Frontend | Medium | P1 | 12 |
-| 3.3 | 네비게이션 통합 | Frontend | Easy | P2 | 2 |
-| 3.4 | E2E 테스트 | QA | Medium | P0 | 8 |
-| 3.5 | MVP 배포 | DevOps | Easy | P0 | 4 |
-
-**Total Phase 1**: 94 hours (~2개월, 1명 풀타임 기준)
-
-### Phase 2 - 10개 태스크
-
-| # | Task | Category | Complexity | Priority | Est. Hours |
-|---|------|----------|-----------|----------|-----------|
-| 4.1 | 복습 자료 생성 API | Backend+AI | Hard | P1 | 10 |
-| 4.2 | 복습 알림 스케줄러 | Backend | Medium | P1 | 8 |
-| 4.3 | 복습 UI (모달) | Frontend | Medium | P1 | 8 |
-| 4.4 | 알림 센터 UI | Frontend | Easy | P2 | 4 |
-| 5.1 | 초기 레벨 테스트 | Fullstack | Medium | P1 | 10 |
-| 5.2 | 레벨 재조정 로직 | Backend | Medium | P1 | 6 |
-| 5.3 | 레벨 변경 알림 UI | Frontend | Easy | P2 | 3 |
-| 5.4 | Phase 2 E2E 테스트 | QA | Medium | P0 | 6 |
-| 5.5 | 성능 최적화 | DevOps | Medium | P1 | 8 |
-
-**Total Phase 2**: 63 hours (~1.5개월)
-
-### Phase 3 - 6개 태스크
-
-| # | Task | Category | Est. Hours |
-|---|------|----------|-----------|
-| 6.1 | 대시보드 고도화 | Fullstack | 16 |
-| 6.2 | 음성 피드백 (TTS) | Frontend | 8 |
-| 6.3 | 커뮤니티 기능 | Fullstack | 20 |
-| 7.1 | A/B 테스트 프레임워크 | DevOps | 12 |
-| 7.2 | 피드백 시스템 | Fullstack | 8 |
-| 7.3 | 고급 모니터링 | DevOps | 6 |
-
-**Total Phase 3**: 70 hours (~1.5개월)
-
----
-
-## 분해된 이슈 출력 (GitHub Issues 형식)
-
-### 출력 포맷
-
-각 태스크는 다음 형식으로 GitHub Issue를 생성합니다:
-
-```markdown
-**Title**: [Phase 1] Database Schema 설계 및 마이그레이션 (Backend, Medium)
-
-**Labels**:
-- `area: backend`
-- `complexity: medium`
-- `type: feature`
-- `priority: P0`
-- `phase: 1-mvp`
-
-**Description**:
-PRD 6.2에 정의된 3개 신규 테이블을 생성합니다.
-
-**Acceptance Criteria**:
-- [ ] `user_profiles` 테이블 생성
-- [ ] `user_mistakes` 테이블 생성
-- [ ] `learning_stats` 테이블 생성
-- [ ] Migration 파일 생성
-- [ ] 인덱스 생성
-
-**Technical Approach**:
-Drizzle ORM을 사용하여 schema.ts에 테이블 정의 후 migration 생성
-
-**Files to Modify**:
-- `db/schema.ts`
-- `drizzle/migrations/`
-
-**Dependencies**:
-None (Blocker)
-
-**Estimated Effort**: 8 hours
-
-**Assignee**: @backend-dev
+lib/gamification/quest-scheduler.ts        — 퀘스트 생성/조회
+lib/gamification/quest-tracker.ts          — 진행률 추적
+app/api/quests/weekly/route.ts             — 주간 퀘스트 API
+app/api/quests/monthly/route.ts            — 월간 챌린지 API
+components/gamification/quest-card.tsx      — 퀘스트 카드
+components/gamification/quest-list.tsx      — 퀘스트 목록
+components/gamification/monthly-challenge.tsx — 월간 챌린지 UI
 ```
 
 ---
 
-## Milestones
+### Sprint 5: AI Pen Pal (F7)
 
-### Milestone 1: MVP Launch (Week 8)
-- ✅ 학습 패턴 추적
-- ✅ 개인화된 피드백
-- ✅ 진도 대시보드
-- **Target Metrics**: 재방문율 35%, 대시보드 방문율 50%
+> **목표**: 교정 이후 AI 친구가 영어 답장을 보내는 킬러 피쳐. "교정 도구" → "교환 일기" 전환.
 
-### Milestone 2: Proactive Features (Week 16)
-- ✅ 능동적 복습 제안
-- ✅ 학습 레벨 자동 조정
-- **Target Metrics**: 재방문율 45%, 전환율 5%
+**선행**: Sprint 0 (messages role 'penpal'), Sprint 1 (레벨 기반 난이도)
 
-### Milestone 3: Scale & Optimize (Week 24)
-- ✅ 커뮤니티 기능
-- ✅ A/B 테스트
-- **Target Metrics**: 재방문율 50%, 전환율 10%
+#### 태스크
 
----
+| # | 태스크 | 유형 | 상세 |
+|---|--------|------|------|
+| 5-1 | Pen Pal 프롬프트 설계 | AI | 시스템 프롬프트: 친근한 친구 톤. 구조: 공감(1문장) + 자기 이야기(1-2문장) + 질문(1문장). 레벨별 영어 난이도. 한국어 비율 0-30% |
+| 5-2 | Pen Pal 생성 Service | Backend | `lib/ai/penpal.ts`: 교정 결과 + 원문 + 이전 답장(최근 3개) + 레벨 → Gemini API. 답장 길이: 원문 50-80%. 타임아웃 15초 |
+| 5-3 | 교정 Flow 연동 | Backend | `app/api/chat/route.ts`: 교정 완료 후 비동기로 Pen Pal 생성. messages 테이블에 role='penpal' INSERT. 실패 시 교정은 정상 반환 |
+| 5-4 | 맥락 기억 | Backend | 이전 penpal 메시지 최근 3개를 프롬프트에 포함. user_profiles.learning_preferences 반영 |
+| 5-5 | Pen Pal API | Backend | `GET /api/chat/[chatId]/penpal` — 해당 일기의 답장 조회. 무료: 미리보기 2줄만 |
+| 5-6 | 답장 UI (프리미엄) | Frontend | 교정 결과 하단 "편지 봉투" 카드. 전체 답장 표시 |
+| 5-7 | 답장 미리보기 (무료) | Frontend | 첫 2줄 + 나머지 블러 + "전체 답장은 프리미엄에서" CTA |
+| 5-8 | 답장 내 표현 저장 | Frontend | 프리미엄: 답장에서 모르는 표현 탭 → 뜻 확인 + 표현노트 저장 |
+| 5-9 | 기록 상세 연동 | Frontend | `app/history/[id]/page.tsx`: 일기 + 교정 + AI 답장 "교환 일기" 형태 |
 
-## Risk Management
+#### 완료 조건
 
-### Top 3 Risks
+- [ ] 교정 후 AI 답장 자동 생성 (비동기, 15초 타임아웃)
+- [ ] 공감 + 이야기 + 질문 구조
+- [ ] 레벨 기반 영어 난이도
+- [ ] 이전 답장 3개 맥락 기억
+- [ ] 무료: 2줄 미리보기 + 블러
+- [ ] 프리미엄: 전체 답장 + 표현 탭 저장
+- [ ] 기록 상세에서 교환 일기 표시
 
-1. **AI 분류 정확도 < 85%**
-   - Mitigation: 초기 100개 샘플 수동 검증, 피드백 루프 구축
+#### 신규 파일
 
-2. **Cron Job 안정성**
-   - Mitigation: Vercel Cron 대신 Upstash QStash 고려, 모니터링 강화
-
-3. **사용자 참여율 저조**
-   - Mitigation: Phase 1 출시 후 5명 인터뷰, 빠른 피드백 반영
-
----
-
-## Next Steps
-
-1. ✅ **이 실행 계획 리뷰** (팀 전체)
-2. ✅ **GitHub Issues 생성** (`decompose-issue.md` 커맨드 활용)
-3. ✅ **Sprint 1 시작** (Task 1.1 - 1.3)
-4. ✅ **주간 스탠드업** 설정
-5. ✅ **Phase 1 완료 후 사용자 테스트**
+```
+lib/ai/penpal.ts                          — Pen Pal 생성 서비스
+app/api/chat/[chatId]/penpal/route.ts     — Pen Pal 조회 API
+components/penpal/penpal-card.tsx          — 답장 카드
+components/penpal/penpal-teaser.tsx        — 무료 미리보기
+```
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2025-01-15
-**Next Review**: Sprint 1 완료 후 (Week 2)
+### Sprint 6: IAP & Monetization (F12)
+
+> **목표**: 5종 IAP 소모품 결제 + 6개 과금 트리거 시점에 자연스러운 구매 동선 배치.
+
+**선행**: Sprint 1~5 (IAP 상품에 해당하는 기능 존재)
+
+#### 태스크
+
+| # | 태스크 | 유형 | 상세 |
+|---|--------|------|------|
+| 6-1 | IAP 상품 정의 | Backend | `lib/payment/iap-products.ts`: 5종 상품 (product_type, 가격, 효과). 서버 금액 검증 상수 |
+| 6-2 | IAP 결제 API | Backend | `POST /api/payment/iap/confirm` — Toss 승인 → 금액 검증 → iap_purchases INSERT → 사이드이펙트 (bonus_count +1, freeze +N, booster 활성화, key +5) |
+| 6-3 | 사이드이펙트 처리 | Backend | 상품별 적용 함수: applyExtraCorrection(), applyStreakFreeze(), applyXpBooster(), applyChestKeys() |
+| 6-4 | 교정 소진 모달 | Frontend | 무료 교정 소진 → "추가 교정 ₩500" 원버튼 + "프리미엄 ₩6,900" 하단 |
+| 6-5 | Streak 위기 배너 | Frontend | 스트릭 리셋 직후 → "Streak Freeze로 보호하세요" ₩1,500 / ₩3,500 묶음 |
+| 6-6 | XP 부스터 배너 | Frontend | 레벨업 직전 (50 XP 이하) → "XP 2배 부스터 ₩1,000" |
+| 6-7 | 보물상자 열쇠 구매 | Frontend | 보물상자 이력 화면에서 "열쇠 5개 ₩2,500" 구매 버튼 |
+| 6-8 | 프리미엄 안내 통합 | Frontend | Lv.10 도달, 표현노트 20개, AI 펜팔 미리보기, 기록 7일 초과, 퀘스트 잠금, 오답 분석 블러 → 프리미엄 안내 모달 통합 |
+| 6-9 | 가격 페이지 업데이트 | Frontend | `app/pricing/page.tsx`: Free vs Premium 비교표 (PRD 3.1절) + IAP 상품 목록 |
+
+#### 완료 조건
+
+- [ ] 5종 IAP 결제 → Toss 승인 → 효과 즉시 적용
+- [ ] 서버 금액 검증 동작
+- [ ] 6개 과금 트리거 시점에 자연스러운 구매 동선
+- [ ] iap_purchases 트랜잭션 기록
+- [ ] 가격 페이지 업데이트
+
+#### 신규 파일
+
+```
+lib/payment/iap-products.ts               — IAP 상품 정의
+lib/payment/iap-effects.ts                — 사이드이펙트 처리
+app/api/payment/iap/confirm/route.ts      — IAP 결제 승인 API
+components/payment/iap-modal.tsx           — IAP 구매 모달
+components/payment/trigger-banner.tsx      — 과금 트리거 배너
+```
+
+---
+
+### Sprint 7: Integration & Polish
+
+> **목표**: 전체 기능 통합, 프리미엄 게이팅 일관성, 성능 최적화, 엣지 케이스 처리.
+
+**선행**: Sprint 0~6
+
+#### 태스크
+
+| # | 태스크 | 유형 | 상세 |
+|---|--------|------|------|
+| 7-1 | 프리미엄 게이팅 검증 | QA | PRD "인증 정책" 테이블 대비 13개 기능 전수 확인. 기록 7일 제한, 표현노트 20개 제한, 오답 분석 Pro only, 퀘스트 1/3개 |
+| 7-2 | 비차단 원칙 검증 | QA | XP/스트릭/퀘스트/보물상자/Pen Pal 장애 시 교정 정상 동작 확인 |
+| 7-3 | 오답 분류 업데이트 | Backend | AI 프롬프트: 3-category + sub_type 체계. mistakes.ts: 새 분류 저장/조회 |
+| 7-4 | 오답 분석 Pro 게이팅 | Backend + Frontend | 무료: "이 실수 N번" 티저 + 인사이트 블러. 프리미엄: 전체 인사이트 |
+| 7-5 | 기록 조회 7일 제한 | Backend | `GET /api/history`: 무료 최근 7일만 반환 + 7일 초과 안내 |
+| 7-6 | 표현노트 20개 제한 | Backend | `POST /api/vocabulary`: 무료 사용자 20개 초과 시 거부 + 안내 |
+| 7-7 | 프로필 페이지 통합 | Frontend | XP/레벨/칭호 + Freeze 보유 + 열쇠 보유 + 구독 상태 + 학습 목표 — 한 화면 |
+| 7-8 | 캘린더 뷰 업데이트 | Frontend | chats 테이블 새 컬럼 (mood, word_count, challenge_word_used) 반영 |
+| 7-9 | 에러 처리 통합 | Backend | 모든 gamification API try-catch + 비차단 fallback + 한국어 메시지 |
+| 7-10 | 게스트 모드 정리 | Backend + Frontend | 비인증 사용자: 교정 1회 (기록 미저장), XP/스트릭/퀘스트/보물상자/Pen Pal 불가 |
+| 7-11 | API 타임아웃 정리 | Backend | 교정 60초, Pen Pal 15초, AI 보강 5초 |
+
+#### 완료 조건
+
+- [ ] 인증 정책 테이블 전수 확인 통과
+- [ ] 비차단 원칙 검증 통과
+- [ ] 오답 3-category 체계 동작
+- [ ] 무료 기록 7일 / 표현노트 20개 제한
+- [ ] 프로필 전체 인벤토리 표시
+- [ ] 게스트 모드 접근 제어
+
+---
+
+## 4. Feature → Sprint 매핑
+
+| Feature | Sprint | 작업 유형 |
+|---------|--------|----------|
+| F1: 일기 & AI 교정 | **0** (입력 검증, 정책 변경) | 기존 수정 |
+| F2: 챌린지 모드 | **0** (유지) | 변경 최소 |
+| F3: XP & 레벨 | **1** | 전체 신규 |
+| F4: 스트릭 & 위기 구제 | **2** | 기존 확장 |
+| F5: 보물상자 | **3** | 전체 신규 |
+| F6: 주간/월간 퀘스트 | **4** | 전체 신규 |
+| F7: AI Pen Pal | **5** | 전체 신규 |
+| F8: 표현노트 | **7** (20개 제한) | 기존 수정 |
+| F9: 오답 분석 | **7** (분류 변경 + Pro 게이팅) | 기존 수정 |
+| F10: 캘린더 | **7** (새 컬럼 반영) | 기존 수정 |
+| F11: 기록 조회 | **7** (7일 제한) | 기존 수정 |
+| F12: 프리미엄 & IAP | **0** (가격) + **6** (IAP) | 기존 + 신규 |
+| F13: 프로필 | **1** (XP) + **7** (통합) | 점진적 확장 |
+
+---
+
+## 5. 배포 전략
+
+v3.0을 한 번에 출시하지 않고 **4단계 점진 배포**.
+
+| 배포 | 스프린트 | 사용자 체감 변화 | 핵심 포인트 |
+|------|---------|----------------|------------|
+| **v3.0-alpha** | Sprint 0 + 1 | XP/레벨 등장, 레벨업 연출, 레벨 기반 설명 | 게이미피케이션 첫 경험 |
+| **v3.0-beta** | Sprint 2 + 3 | Streak Freeze, 보물상자 + **무료 교정 3→1 축소** | 프리미엄 가치 상승과 동시에 무료 제한 |
+| **v3.0-rc** | Sprint 4 + 5 | 퀘스트, AI Pen Pal | 게임성 완성 + 킬러 피쳐 |
+| **v3.0** | Sprint 6 + 7 | IAP 상점, 전체 Polish | 수익화 on |
+
+---
+
+## 6. 리스크 & 대응
+
+| # | 리스크 | 영향 | 대응 |
+|---|--------|------|------|
+| R1 | LangGraph 체크포인트 제거 시 기존 대화 호환성 | Sprint 0 | 기존 데이터는 orphan 처리. 새 일기부터 새 파이프라인 적용 |
+| R2 | Gemini API 비용 증가 (Pen Pal 추가 호출) | Sprint 5 | Pen Pal은 별도 호출. gemini-1.5-flash 사용으로 비용 최소화. 일일 호출량 모니터링 |
+| R3 | 무료 교정 1회 축소 시 이탈 | Sprint 3 | **게이미피케이션 도입과 동시 적용** (Sprint 3 배포 시점). 단독 축소 금지 |
+| R4 | 보물상자 확률 밸런싱 | Sprint 3 | 초기 PRD 확률 적용 후 데이터 기반 튜닝 (2주 단위) |
+| R5 | 주간 퀘스트 스케줄러 인프라 | Sprint 4 | Cron 대신 lazy generation (첫 조회 시 생성) 패턴으로 인프라 의존성 제거 |
+| R6 | IAP 결제 검증 보안 | Sprint 6 | 서버 금액 검증 필수. product_type별 정가와 일치하지 않으면 거부 |
+| R7 | DB 마이그레이션 실패 | Sprint 0 | 4-Phase 순서 엄수 (ADD → CREATE → 데이터 이관 → DROP). 각 Phase 후 롤백 지점 설정 |
