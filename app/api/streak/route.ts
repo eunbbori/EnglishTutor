@@ -13,6 +13,14 @@ export async function GET() {
         lastWrittenAt: null,
         totalEntries: 0,
         wroteToday: false,
+        freezeCount: 0,
+        freezeUsedToday: false,
+        comebackStatus: {
+          isComeback: false,
+          comebackDays: 0,
+          previousStreak: 0,
+        },
+        welcomeBackBonus: false,
         isGuest: true,
       });
     }

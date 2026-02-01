@@ -1,6 +1,7 @@
 import { db } from "@/db";
-import { diaryStreaks } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { diaryStreaks, userProfiles, xpHistory } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
+import { grantXp } from "@/lib/gamification/xp-service";
 
 export interface StreakInfo {
   currentStreak: number;
@@ -8,6 +9,14 @@ export interface StreakInfo {
   lastWrittenAt: string | null;
   totalEntries: number;
   wroteToday: boolean;
+  freezeCount: number;
+  freezeUsedToday: boolean;
+  comebackStatus: {
+    isComeback: boolean;
+    comebackDays: number;
+    previousStreak: number;
+  };
+  welcomeBackBonus: boolean;
 }
 
 /**
@@ -35,6 +44,51 @@ function getYesterdayKST(): string {
 }
 
 /**
+ * Calculate days between two dates
+ */
+function daysBetween(date1: string, date2: string): number {
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+  const diffTime = Math.abs(d2.getTime() - d1.getTime());
+  return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+}
+
+/**
+ * Get user's Freeze count from profile
+ */
+async function getFreezeCount(userId: string): Promise<number> {
+  const profile = await db
+    .select()
+    .from(userProfiles)
+    .where(eq(userProfiles.userId, userId))
+    .limit(1);
+
+  return profile.length > 0 ? profile[0].streakFreezeCount : 0;
+}
+
+/**
+ * Decrement user's Freeze count
+ */
+async function consumeFreeze(userId: string): Promise<void> {
+  // Get current count
+  const profile = await db
+    .select()
+    .from(userProfiles)
+    .where(eq(userProfiles.userId, userId))
+    .limit(1);
+
+  if (profile.length > 0 && profile[0].streakFreezeCount > 0) {
+    await db
+      .update(userProfiles)
+      .set({
+        streakFreezeCount: profile[0].streakFreezeCount - 1,
+        updatedAt: new Date(),
+      })
+      .where(eq(userProfiles.userId, userId));
+  }
+}
+
+/**
  * Get or create streak record for a user
  */
 export async function getOrCreateStreak(userId: string): Promise<StreakInfo> {
@@ -46,18 +100,20 @@ export async function getOrCreateStreak(userId: string): Promise<StreakInfo> {
     .limit(1);
 
   const today = getTodayKST();
+  const freezeCount = await getFreezeCount(userId);
 
   if (existing.length === 0) {
     // Create new streak record
-    const [newStreak] = await db
+    await db
       .insert(diaryStreaks)
       .values({
         userId,
         currentStreak: 0,
         longestStreak: 0,
         totalEntries: 0,
-      })
-      .returning();
+        previousStreak: 0,
+        comebackDays: 0,
+      });
 
     return {
       currentStreak: 0,
@@ -65,11 +121,20 @@ export async function getOrCreateStreak(userId: string): Promise<StreakInfo> {
       lastWrittenAt: null,
       totalEntries: 0,
       wroteToday: false,
+      freezeCount,
+      freezeUsedToday: false,
+      comebackStatus: {
+        isComeback: false,
+        comebackDays: 0,
+        previousStreak: 0,
+      },
+      welcomeBackBonus: false,
     };
   }
 
   const streak = existing[0];
   const wroteToday = streak.lastWrittenAt === today;
+  const freezeUsedToday = streak.streakFreezeUsedAt === today;
 
   return {
     currentStreak: streak.currentStreak,
@@ -77,6 +142,14 @@ export async function getOrCreateStreak(userId: string): Promise<StreakInfo> {
     lastWrittenAt: streak.lastWrittenAt,
     totalEntries: streak.totalEntries,
     wroteToday,
+    freezeCount,
+    freezeUsedToday,
+    comebackStatus: {
+      isComeback: !!streak.comebackStartedAt,
+      comebackDays: streak.comebackDays,
+      previousStreak: streak.previousStreak,
+    },
+    welcomeBackBonus: false,
   };
 }
 
@@ -104,8 +177,12 @@ export async function recordDiaryEntry(userId: string): Promise<StreakInfo> {
         longestStreak: 1,
         lastWrittenAt: today,
         totalEntries: 1,
+        previousStreak: 0,
+        comebackDays: 0,
       })
       .returning();
+
+    const freezeCount = await getFreezeCount(userId);
 
     return {
       currentStreak: 1,
@@ -113,6 +190,14 @@ export async function recordDiaryEntry(userId: string): Promise<StreakInfo> {
       lastWrittenAt: today,
       totalEntries: 1,
       wroteToday: true,
+      freezeCount,
+      freezeUsedToday: false,
+      comebackStatus: {
+        isComeback: false,
+        comebackDays: 0,
+        previousStreak: 0,
+      },
+      welcomeBackBonus: false,
     };
   }
 
@@ -120,24 +205,87 @@ export async function recordDiaryEntry(userId: string): Promise<StreakInfo> {
 
   // If already wrote today, just return current streak (don't increment)
   if (streak.lastWrittenAt === today) {
+    const freezeCount = await getFreezeCount(userId);
     return {
       currentStreak: streak.currentStreak,
       longestStreak: streak.longestStreak,
       lastWrittenAt: streak.lastWrittenAt,
       totalEntries: streak.totalEntries,
       wroteToday: true,
+      freezeCount,
+      freezeUsedToday: streak.streakFreezeUsedAt === today,
+      comebackStatus: {
+        isComeback: !!streak.comebackStartedAt,
+        comebackDays: streak.comebackDays,
+        previousStreak: streak.previousStreak,
+      },
+      welcomeBackBonus: false,
     };
   }
 
-  // Calculate new streak
-  let newCurrentStreak: number;
+  // Calculate gap since last entry
+  const gap = streak.lastWrittenAt ? daysBetween(streak.lastWrittenAt, today) : 999;
+  const freezeCount = await getFreezeCount(userId);
 
+  // Check for Welcome Back bonus (3+ days absence)
+  let welcomeBackBonus = false;
+  if (gap >= 3) {
+    try {
+      await grantXp(userId, "welcome_back");
+      welcomeBackBonus = true;
+      console.log(`[Streak] ✓ Welcome Back bonus! +50 XP for ${gap}-day absence`);
+    } catch (error) {
+      console.error("[Streak] Failed to grant Welcome Back XP:", error);
+    }
+  }
+
+  let newCurrentStreak: number;
+  let previousStreak = streak.previousStreak;
+  let comebackStartedAt = streak.comebackStartedAt;
+  let comebackDays = streak.comebackDays;
+  let freezeUsedAt = streak.streakFreezeUsedAt;
+
+  // Determine streak continuation or reset
   if (streak.lastWrittenAt === yesterday) {
-    // Continuing streak from yesterday
+    // ✅ Continuing streak from yesterday
     newCurrentStreak = streak.currentStreak + 1;
+  } else if (gap === 2 && freezeCount > 0) {
+    // ✅ Gap of 2 days (skipped yesterday) + have Freeze → consume Freeze and maintain streak
+    newCurrentStreak = streak.currentStreak + 1;
+    await consumeFreeze(userId);
+    freezeUsedAt = yesterday; // Mark freeze as used on the skipped day
+    console.log(`[Streak] 🛡️ Freeze consumed! Streak protected (${freezeCount - 1} remaining)`);
   } else {
-    // Streak broken - starting fresh
+    // ❌ Streak broken - reset to 1
+    previousStreak = streak.currentStreak; // Save old streak for Comeback recovery
     newCurrentStreak = 1;
+    comebackStartedAt = today; // Start tracking Comeback
+    comebackDays = 1;
+    console.log(`[Streak] ⚠️ Streak reset (gap: ${gap} days). Previous streak: ${previousStreak}`);
+  }
+
+  // Comeback tracking
+  if (comebackStartedAt && comebackStartedAt !== today) {
+    comebackDays += 1;
+
+    // Comeback Kid bonus (3 consecutive days after reset)
+    if (comebackDays === 3) {
+      try {
+        await grantXp(userId, "comeback_kid");
+        console.log(`[Streak] 🎉 Comeback Kid! +100 XP for 3-day comeback`);
+      } catch (error) {
+        console.error("[Streak] Failed to grant Comeback Kid XP:", error);
+      }
+    }
+
+    // Streak recovery (7 consecutive days after reset → restore 50% of previous streak)
+    if (comebackDays === 7 && previousStreak > 0) {
+      const recoveredStreak = Math.floor(previousStreak * 0.5);
+      newCurrentStreak += recoveredStreak;
+      comebackStartedAt = null; // End Comeback mode
+      comebackDays = 0;
+      console.log(`[Streak] 💪 Streak recovery! Restored ${recoveredStreak} days (50% of ${previousStreak})`);
+    }
   }
 
   const newLongestStreak = Math.max(streak.longestStreak, newCurrentStreak);
@@ -151,9 +299,60 @@ export async function recordDiaryEntry(userId: string): Promise<StreakInfo> {
       longestStreak: newLongestStreak,
       lastWrittenAt: today,
       totalEntries: newTotalEntries,
+      previousStreak,
+      streakFreezeUsedAt: freezeUsedAt,
+      comebackStartedAt,
+      comebackDays,
       updatedAt: new Date(),
     })
     .where(eq(diaryStreaks.userId, userId));
+
+  // Check for streak milestones and grant XP (once per milestone)
+  try {
+    // 7-day milestone (+100 XP)
+    if (newCurrentStreak === 7) {
+      const existing7d = await db
+        .select()
+        .from(xpHistory)
+        .where(
+          and(
+            eq(xpHistory.userId, userId),
+            eq(xpHistory.action, "streak_7d")
+          )
+        )
+        .limit(1);
+
+      if (existing7d.length === 0) {
+        const xpResult = await grantXp(userId, "streak_7d");
+        console.log(`[Streak] ✓ 7-day milestone reached! Granted +${xpResult.xpGained} XP`);
+      }
+    }
+
+    // 30-day milestone (+500 XP)
+    if (newCurrentStreak === 30) {
+      const existing30d = await db
+        .select()
+        .from(xpHistory)
+        .where(
+          and(
+            eq(xpHistory.userId, userId),
+            eq(xpHistory.action, "streak_30d")
+          )
+        )
+        .limit(1);
+
+      if (existing30d.length === 0) {
+        const xpResult = await grantXp(userId, "streak_30d");
+        console.log(`[Streak] ✓ 30-day milestone reached! Granted +${xpResult.xpGained} XP`);
+      }
+    }
+  } catch (error) {
+    console.error("[Streak] Failed to grant milestone XP:", error);
+    // Don't fail the request if XP tracking fails (non-blocking)
+  }
+
+  // Refresh freeze count after potential consumption
+  const updatedFreezeCount = await getFreezeCount(userId);
 
   return {
     currentStreak: newCurrentStreak,
@@ -161,5 +360,13 @@ export async function recordDiaryEntry(userId: string): Promise<StreakInfo> {
     lastWrittenAt: today,
     totalEntries: newTotalEntries,
     wroteToday: true,
+    freezeCount: updatedFreezeCount,
+    freezeUsedToday: freezeUsedAt === yesterday,
+    comebackStatus: {
+      isComeback: !!comebackStartedAt,
+      comebackDays,
+      previousStreak,
+    },
+    welcomeBackBonus,
   };
 }
