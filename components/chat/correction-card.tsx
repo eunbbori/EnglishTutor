@@ -41,7 +41,7 @@ export function CorrectionCard({ correction }: CorrectionCardProps) {
             {correction.alternatives.map((alt, idx) => (
               <div key={idx} className="flex items-start gap-2">
                 <Badge
-                  variant={alt.type === "Formal" ? "default" : alt.type === "Casual" ? "secondary" : "outline"}
+                  variant={alt.type === "Expressive" ? "default" : alt.type === "Casual" ? "secondary" : "outline"}
                   className="text-xs shrink-0"
                 >
                   {alt.type}
