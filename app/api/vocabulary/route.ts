@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { vocabulary } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { enrichVocabulary } from "@/lib/ai/vocabulary-enricher";
+import { grantXp } from "@/lib/gamification/xp-service";
 
 // GET /api/vocabulary - Get user's vocabulary list
 export async function GET(req: Request) {
@@ -86,6 +87,15 @@ export async function POST(req: Request) {
       .insert(vocabulary)
       .values(values)
       .returning();
+
+    // Grant XP for expression save (+5 XP)
+    try {
+      const xpResult = await grantXp(session.user.id, "expression_save", newWord.id);
+      console.log(`[Vocabulary API] XP granted for expression_save: +${xpResult.xpGained} XP`);
+    } catch (error) {
+      console.error("[Vocabulary API] Failed to grant XP:", error);
+      // Don't fail the request if XP tracking fails (non-blocking)
+    }
 
     return NextResponse.json(
       {
