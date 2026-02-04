@@ -238,13 +238,35 @@ export default function Home() {
   };
 
   const handleNewEntry = () => {
+    // Check usage limit before allowing user to write new entry
+    if (usageStatus && !usageStatus.isPremium && usageStatus.remaining === 0) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setCorrectionData(null);
     setChatId(null);
-    setViewMode("calendar");
+    setViewMode("write"); // Go directly to write mode for new entry
   };
 
   const handleWriteToday = () => {
+    // Check usage limit before allowing user to write
+    if (usageStatus && !usageStatus.isPremium && usageStatus.remaining === 0) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setViewMode("write");
+  };
+
+  const handleToggleView = () => {
+    if (viewMode === "calendar") {
+      // Switching to write mode - check usage limit
+      handleWriteToday();
+    } else {
+      // Switching back to calendar - no check needed
+      setViewMode("calendar");
+    }
   };
 
   return (
@@ -286,7 +308,7 @@ export default function Home() {
               {/* Calendar/Write Toggle - HIG touch target */}
               {viewMode !== "result" && (
                 <button
-                  onClick={() => setViewMode(viewMode === "calendar" ? "write" : "calendar")}
+                  onClick={handleToggleView}
                   className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground active:text-foreground transition-colors min-h-[44px] min-w-[44px] justify-center touch-manipulation"
                   aria-label={viewMode === "calendar" ? "일기 쓰기" : "달력 보기"}
                 >
