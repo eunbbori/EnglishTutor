@@ -37,14 +37,6 @@ interface DiaryEditorProps {
   isLoading?: boolean;
 }
 
-const SHUFFLE_LIMIT = 3;
-const STORAGE_KEY = "diary_shuffle_data";
-
-interface ShuffleData {
-  date: string;
-  count: number;
-}
-
 /**
  * Input validation rules to prevent abuse
  */
@@ -121,41 +113,11 @@ export function DiaryEditor({
   const [selectedPrompt, setSelectedPrompt] = useState<DiaryPrompt | null>(
     prompts.find((p) => p.id === defaultPromptId) || prompts[0] || null,
   );
-  const [shuffleCount, setShuffleCount] = useState(0);
   const [isShuffling, setIsShuffling] = useState(false);
+  const [isInspirationOpen, setIsInspirationOpen] = useState(false);
 
   // Input validation
   const validation = validateDiaryInput(text);
-
-  // Load shuffle count from localStorage on mount
-  useEffect(() => {
-    const today = new Date().toDateString();
-    const stored = localStorage.getItem(STORAGE_KEY);
-
-    if (stored) {
-      try {
-        const data: ShuffleData = JSON.parse(stored);
-        if (data.date === today) {
-          setShuffleCount(data.count);
-        } else {
-          // New day, reset count
-          const newData: ShuffleData = { date: today, count: 0 };
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
-          setShuffleCount(0);
-        }
-      } catch {
-        // Invalid data, reset
-        const newData: ShuffleData = { date: today, count: 0 };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
-        setShuffleCount(0);
-      }
-    } else {
-      // No data, initialize
-      const newData: ShuffleData = { date: today, count: 0 };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
-      setShuffleCount(0);
-    }
-  }, []);
 
   // Ensure selectedPrompt is always set
   useEffect(() => {
@@ -178,11 +140,7 @@ export function DiaryEditor({
     }
   };
 
-  const clearPrompt = () => {
-    setSelectedPrompt(null);
-  };
-
-  // Free Mode: Change inspiration (unlimited)
+  // Change inspiration (unlimited)
   const changeInspiration = () => {
     setIsShuffling(true);
 
@@ -195,32 +153,6 @@ export function DiaryEditor({
     setTimeout(() => {
       setSelectedPrompt(randomPrompt);
       setIsShuffling(false);
-    }, 300);
-  };
-
-  // Challenge Mode: Shuffle prompt (3 times limit)
-  const shufflePrompt = () => {
-    if (shuffleCount >= SHUFFLE_LIMIT || !selectedPrompt) return;
-
-    setIsShuffling(true);
-
-    // Get a random prompt different from current one
-    const availablePrompts = prompts.filter((p) => p.id !== selectedPrompt.id);
-    const randomPrompt =
-      availablePrompts[Math.floor(Math.random() * availablePrompts.length)];
-
-    // Animate and update
-    setTimeout(() => {
-      setSelectedPrompt(randomPrompt);
-      setIsShuffling(false);
-
-      // Update shuffle count
-      const newCount = shuffleCount + 1;
-      setShuffleCount(newCount);
-
-      const today = new Date().toDateString();
-      const newData: ShuffleData = { date: today, count: newCount };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
     }, 300);
   };
 
@@ -272,42 +204,64 @@ export function DiaryEditor({
         />
       </div>
 
-      {/* Inspiration Hint - Responsive */}
+      {/* Opt-in Inspiration Hint (#135) */}
       <div className="mb-4 sm:mb-5 lg:mb-6">
-          <div className="bg-ds-bg-secondary border-2 border-ds-border-light rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm">
-            <div className="flex items-start gap-2 sm:gap-3">
-              <div className="p-1.5 sm:p-2 bg-ds-pastel-yellow/40 rounded-lg border border-ds-pastel-yellow flex-shrink-0">
-                <Lightbulb className="h-4 w-4 sm:h-5 sm:w-5 text-ds-accent-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2 mb-1.5 sm:mb-2">
-                  <span className="text-xs sm:text-sm font-medium text-ds-text-secondary">
-                    오늘의 주제
-                  </span>
-                  <button
-                    onClick={changeInspiration}
-                    disabled={isShuffling}
-                    className="text-[11px] sm:text-xs text-ds-accent-primary hover:text-ds-accent-hover active:text-ds-accent-hover flex items-center gap-1 transition-smooth disabled:opacity-40 font-medium touch-manipulation min-h-[44px] -my-2"
-                    aria-label="다른 주제 찾기"
-                  >
-                    <RotateCw
-                      className={`h-3 w-3 ${isShuffling ? "animate-spin" : ""}`}
-                    />
-                    <span className="hidden xs:inline">다른 주제 찾기</span>
-                    <span className="xs:hidden">변경</span>
-                  </button>
+        {!isInspirationOpen ? (
+          // Collapsed state: small button
+          <button
+            onClick={() => setIsInspirationOpen(true)}
+            disabled={isLoading}
+            className="text-xs sm:text-sm text-ds-text-muted hover:text-ds-text-secondary flex items-center gap-1.5 transition-colors disabled:opacity-50 mx-auto"
+          >
+            <Lightbulb className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span>뭘 쓸지 모르겠어요</span>
+          </button>
+        ) : (
+          // Expanded state: inspiration card with animation
+          <div className="animate-in slide-in-from-top-2 fade-in duration-300">
+            <div className="bg-ds-bg-secondary border-2 border-ds-border-light rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm">
+              <div className="flex items-start gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-ds-pastel-yellow/40 rounded-lg border border-ds-pastel-yellow flex-shrink-0">
+                  <Lightbulb className="h-4 w-4 sm:h-5 sm:w-5 text-ds-accent-primary" />
                 </div>
-                <p
-                  className={`text-ds-text-primary font-semibold text-sm sm:text-base transition-opacity ${isShuffling ? "opacity-50" : "opacity-100"} leading-snug`}
-                >
-                  {selectedPrompt?.title || "오늘 하루 어땠나요?"}
-                </p>
-                {/* <p className="text-[11px] sm:text-xs text-ds-text-muted mt-1.5 sm:mt-2 leading-relaxed">
-                  주제 상관없이 자유롭게 쓰셔도 돼요!
-                </p> */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2 mb-1.5 sm:mb-2">
+                    <span className="text-xs sm:text-sm font-medium text-ds-text-secondary">
+                      오늘의 영감
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={changeInspiration}
+                        disabled={isShuffling || isLoading}
+                        className="text-[11px] sm:text-xs text-ds-accent-primary hover:text-ds-accent-hover active:text-ds-accent-hover flex items-center gap-1 transition-smooth disabled:opacity-40 font-medium touch-manipulation min-h-[44px] -my-2"
+                        aria-label="다른 영감 찾기"
+                      >
+                        <RotateCw
+                          className={`h-3 w-3 ${isShuffling ? "animate-spin" : ""}`}
+                        />
+                        <span className="hidden xs:inline">다른 영감 찾기</span>
+                        <span className="xs:hidden">변경</span>
+                      </button>
+                      <button
+                        onClick={() => setIsInspirationOpen(false)}
+                        disabled={isLoading}
+                        className="text-ds-text-muted hover:text-ds-text-secondary transition-colors disabled:opacity-40 p-1 touch-manipulation"
+                        aria-label="닫기"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                  <p
+                    className={`text-ds-text-primary font-semibold text-sm sm:text-base transition-opacity ${isShuffling ? "opacity-50" : "opacity-100"} leading-snug`}
+                  >
+                    {selectedPrompt?.title || "오늘 하루 어땠나요?"}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
+        )}
       </div>
 
       {/* Diary Paper - Responsive */}
