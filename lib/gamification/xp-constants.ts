@@ -1,7 +1,30 @@
 /**
  * XP Constants & Level Calculation
- * v3.0: XP system with 30 levels, log-curve progression
+ * v3.1.1: Balanced XP system with daily caps, TTR validation, and anti-gaming measures
  */
+
+/**
+ * Daily XP Caps
+ * Prevents XP inflation from unlimited submissions
+ */
+export const DAILY_CAPS = {
+  diary_submit: 3,        // 일기 제출 (하루 3회까지 XP 지급)
+  expression_save: 5,     // 표현노트 저장 (하루 5회까지 XP 지급)
+  weakness_overcome: 1,   // 약점 극복 (하루 1회)
+} as const;
+
+/**
+ * TTR (Type-Token Ratio) Threshold
+ * Minimum TTR required for volume-based rewards
+ * TTR = unique words / total words
+ */
+export const MIN_TTR_FOR_VOLUME_BONUS = 0.4;
+
+/**
+ * Duplicate word threshold for client-side validation
+ * Reject text if duplicate word ratio exceeds this value
+ */
+export const MAX_DUPLICATE_WORD_RATIO = 0.5; // 50% (tightened from 70%)
 
 /**
  * XP Reward Table
@@ -9,26 +32,39 @@
  */
 export const XP_REWARDS = {
   // Core diary actions
-  diary_submit: 30,           // 일기 제출
-  challenge_word: 15,          // 챌린지 단어 사용
-  perfect_diary: 20,           // 오답 0개 (완벽한 일기)
+  diary_submit: 30,           // 일기 제출 (하루 3회 상한)
+  weakness_overcome: 20,      // 약점 극복 (최근 TOP 1 오답 패턴 미발생, 하루 1회)
+
+  // Volume-based rewards (requires TTR ≥ 0.4)
+  // v3.1.1: Simplified to 50/100 word tiers (Issue #133)
+  length_50: 10,              // 50단어 이상 (TTR ≥ 0.4)
+  length_100: 20,             // 100단어 이상 (TTR ≥ 0.4)
 
   // Expression notebook
-  expression_save: 5,          // 표현노트 저장
+  expression_save: 5,         // 표현노트 저장 (하루 5회 상한)
 
-  // Streak milestones
-  streak_7d: 100,              // 연속 7일 달성
-  streak_30d: 500,             // 연속 30일 달성
+  // Streak milestones (7 tiers)
+  streak_7d: 100,             // 연속 7일 달성
+  streak_14d: 200,            // 연속 14일 달성
+  streak_30d: 500,            // 연속 30일 달성
+  streak_60d: 1000,           // 연속 60일 달성
+  streak_100d: 1500,          // 연속 100일 달성
+  streak_180d: 3000,          // 연속 180일 달성
+  streak_365d: 5000,          // 연속 365일 달성
+
+  // Monthly challenge (stepped rewards)
+  monthly_challenge_15: 200,  // 월 15회 작성
+  monthly_challenge_20: 400,  // 월 20회 작성
+  monthly_challenge_25: 600,  // 월 25회 작성
 
   // Quest rewards (Pro only)
-  weekly_quest: 80,            // 주간 퀘스트 (80-200 XP range)
-  monthly_challenge: 1000,     // 월간 챌린지
-  weekly_bonus: 100,           // 주간 보너스 (2/3 완료)
-  treasure_chest: 25,          // 보물상자 (10-50 XP range)
+  weekly_quest: 80,           // 주간 퀘스트 (80-200 XP range)
+  weekly_bonus: 100,          // 주간 보너스 (2/3 완료)
+  treasure_chest: 25,         // 보물상자 (10-50 XP range)
 
   // Comeback bonuses
-  welcome_back: 50,            // 3일+ 미접속 후 복귀
-  comeback_kid: 100,           // 리셋 후 3일 연속
+  welcome_back: 50,           // 3일+ 미접속 후 복귀 (이전 스트릭 ≥3일 조건)
+  comeback_kid: 100,          // 리셋 후 3일 연속
 } as const;
 
 export type XpAction = keyof typeof XP_REWARDS;
@@ -99,39 +135,40 @@ export const LEVEL_TIERS: LevelTier[] = [
 
 /**
  * Level Thresholds (XP required to reach each level)
- * Log-curve: fast early levels → gradual late levels
+ * Formula: floor(80 × N^1.7)
+ * Balanced progression curve for 7.2 months to Lv.30 (premium)
  */
 export const LEVEL_THRESHOLDS: Record<number, number> = {
   1: 0,
-  2: 60,
-  3: 120,
-  4: 200,
-  5: 300,
-  6: 420,
-  7: 560,
-  8: 720,
-  9: 900,
-  10: 1000,
-  11: 1200,
-  12: 1450,
-  13: 1750,
-  14: 2100,
-  15: 2500,
-  16: 2900,
-  17: 3400,
-  18: 3950,
-  19: 4550,
-  20: 5000,
-  21: 5600,
-  22: 6300,
-  23: 7100,
-  24: 8000,
-  25: 10000,
-  26: 12000,
-  27: 14500,
-  28: 17500,
-  29: 21000,
-  30: 25000,
+  2: 259,
+  3: 515,
+  4: 844,
+  5: 1234,
+  6: 1689,
+  7: 2206,
+  8: 2787,
+  9: 3433,
+  10: 4009,     // Free tier cap
+  11: 4619,
+  12: 5260,
+  13: 5930,
+  14: 6627,
+  15: 7351,
+  16: 8100,
+  17: 8873,
+  18: 9669,
+  19: 10488,
+  20: 11328,
+  21: 12189,
+  22: 13070,
+  23: 13970,
+  24: 14889,
+  25: 15826,
+  26: 16781,
+  27: 17753,
+  28: 18741,
+  29: 19746,
+  30: 20766,
 };
 
 /**
@@ -163,6 +200,25 @@ export function calculateLevel(xp: number, isPremium: boolean): number {
   // Apply free tier cap
   if (!isPremium && level > FREE_LEVEL_CAP) {
     return FREE_LEVEL_CAP;
+  }
+
+  return level;
+}
+
+/**
+ * Calculate potential level (without free tier cap)
+ * Used to show free users what level they'd be at with premium
+ * @param xp - Total accumulated XP
+ * @returns Potential level (1-30) without cap
+ */
+export function calculatePotentialLevel(xp: number): number {
+  let level = 1;
+
+  for (let lv = MAX_LEVEL; lv >= 1; lv--) {
+    if (xp >= LEVEL_THRESHOLDS[lv]) {
+      level = lv;
+      break;
+    }
   }
 
   return level;

@@ -8,7 +8,7 @@ import { saveOrUpdateMistake, checkRecurringPattern } from "@/lib/db/mistakes";
 import { auth } from "@/lib/auth";
 import { getUsageStatus, incrementUsage } from "@/lib/subscription/check-usage";
 import { recordDiaryEntry } from "@/lib/streak/streak-manager";
-import { grantXp } from "@/lib/gamification/xp-service";
+import { grantDiaryXp } from "@/lib/gamification/xp-service";
 
 // Vercel timeout configuration (max 60s for Hobby plan)
 export const maxDuration = 60;
@@ -100,10 +100,10 @@ export async function POST(req: Request) {
       }
     }
 
-    const { messages: userMessages, chatId, mode, mood } = await req.json();
+    const { messages: userMessages, chatId, mood } = await req.json();
 
     // Diary context (simplified from business context)
-    const diaryContext = { mode: mode || "diary" };
+    const diaryContext = { mode: "diary" };
 
     // Get the last user message
     const lastUserMessage = userMessages[userMessages.length - 1];
@@ -227,42 +227,28 @@ export async function POST(req: Request) {
     }
 
     // Grant XP for diary submission (authenticated users only)
-    const xpResults: Array<{action: string; xpGained: number; leveledUp: boolean; newLevel?: number}> = [];
+    // v3.1.1: Unified XP granting with TTR validation, daily caps, and weakness overcome
+    let xpMessages: string[] = [];
+    let cappedByDailyLimit = false;
     if (isAuthenticated) {
       try {
-        // 1. Base XP: diary_submit (+30 XP)
-        const diaryXp = await grantXp(userId, "diary_submit", currentChatId);
-        console.log(`[API] XP granted for diary_submit: +${diaryXp.xpGained} XP (total: ${diaryXp.totalXp})`);
-        xpResults.push({
-          action: "diary_submit",
-          xpGained: diaryXp.xpGained,
-          leveledUp: diaryXp.leveledUp,
-          newLevel: diaryXp.newLevel,
-        });
+        const userMessage = messages[messages.length - 1];
+        const diaryText = userMessage.content;
+        const mistakePattern = correctionResult?.mistakePattern || null;
 
-        // 2. Challenge word bonus (+15 XP if used)
-        if (mood || correctionResult?.challengeWordUsed) {
-          const challengeXp = await grantXp(userId, "challenge_word", currentChatId);
-          console.log(`[API] XP granted for challenge_word: +${challengeXp.xpGained} XP`);
-          xpResults.push({
-            action: "challenge_word",
-            xpGained: challengeXp.xpGained,
-            leveledUp: challengeXp.leveledUp,
-            newLevel: challengeXp.newLevel,
-          });
-        }
+        const xpResult = await grantDiaryXp(
+          userId,
+          diaryText,
+          mistakePattern,
+          currentChatId
+        );
 
-        // 3. Perfect diary bonus (+20 XP if no mistakes)
-        if (correctionResult && !correctionResult.mistakeType) {
-          const perfectXp = await grantXp(userId, "perfect_diary", currentChatId);
-          console.log(`[API] XP granted for perfect_diary: +${perfectXp.xpGained} XP`);
-          xpResults.push({
-            action: "perfect_diary",
-            xpGained: perfectXp.xpGained,
-            leveledUp: perfectXp.leveledUp,
-            newLevel: perfectXp.newLevel,
-          });
-        }
+        xpMessages = xpResult.messages;
+        cappedByDailyLimit = xpResult.cappedByDailyLimit;
+
+        console.log(
+          `[API] XP granted: ${xpResult.totalXp} XP (diary: ${xpResult.breakdown.diary}, volume: ${xpResult.breakdown.volume}, weakness: ${xpResult.breakdown.weakness})`
+        );
       } catch (error) {
         console.error("[API] Failed to grant XP:", error);
         // Don't fail the request if XP tracking fails (non-blocking)
@@ -304,11 +290,12 @@ export async function POST(req: Request) {
       }
     }
 
-    // Return the correction result (include mood and XP results if provided)
+    // Return the correction result (include mood and XP messages if provided)
     const responseObject = {
       ...correctionResult,
       ...(mood && { mood }),
-      ...(xpResults.length > 0 && { xpResults }),
+      ...(xpMessages.length > 0 && { xpMessages }),
+      ...(cappedByDailyLimit && { cappedByDailyLimit }),
     };
     return Response.json(
       { object: responseObject },

@@ -1,6 +1,7 @@
 /**
  * XP Service
- * v3.0: Handles XP granting, level calculation, and user profile updates
+ * v3.1.1: Handles XP granting, level calculation, and user profile updates
+ * Includes TTR validation, daily caps, and weakness overcome rewards
  */
 
 import { db } from "@/db";
@@ -14,6 +15,20 @@ import {
   checkLevelUp,
   FREE_LEVEL_CAP,
 } from "./xp-constants";
+import {
+  canEarnDiaryXpToday,
+  incrementDiaryCount
+} from "../xp/daily-tracking";
+import {
+  checkWeaknessOvercome,
+  canEarnWeaknessOvercomeToday,
+  incrementWeaknessOvercomeCount
+} from "../xp/weakness-overcome";
+import {
+  isValidForVolumeBonus,
+  getWordCount
+} from "../validation/ttr";
+import { checkAndGrantLv10Trial } from "../xp/level-rewards";
 
 /**
  * XP Grant Result
@@ -201,6 +216,19 @@ export async function grantXp(
       console.log(
         `[XP Service] 🎉 Level up! ${levelUp.oldLevel} → ${levelUp.newLevel} (${levelUp.newTitle})`
       );
+
+      // v3.1.1: Check for Lv.10 trial reward
+      if (levelUp.newLevel === 10) {
+        try {
+          const trialGranted = await checkAndGrantLv10Trial(userId, levelUp.newLevel);
+          if (trialGranted) {
+            console.log(`[XP Service] 🎁 Lv.10 trial granted to user ${userId}`);
+          }
+        } catch (error) {
+          console.error("[XP Service] Failed to check/grant Lv.10 trial:", error);
+          // Non-blocking
+        }
+      }
     }
 
     return {
@@ -283,5 +311,120 @@ export async function activateXpBooster(userId: string, durationHours: number = 
   } catch (error) {
     console.error("[XP Service] ✗ Error activating booster:", error);
     throw error;
+  }
+}
+
+/**
+ * Grant diary submission XP with volume bonuses and weakness overcome check
+ * v3.1.1: Includes daily caps, TTR validation, and weakness overcome logic
+ *
+ * @param userId - User ID
+ * @param diaryText - Diary content (for word count and TTR)
+ * @param mistakePattern - Mistake pattern from correction (null if no mistakes)
+ * @param chatId - Chat ID for reference
+ * @returns Combined XP grant result with breakdown
+ */
+export async function grantDiaryXp(
+  userId: string,
+  diaryText: string,
+  mistakePattern: string | null,
+  chatId?: string
+): Promise<{
+  totalXp: number;
+  breakdown: {
+    diary: number;
+    volume: number;
+    weakness: number;
+  };
+  messages: string[];
+  cappedByDailyLimit: boolean;
+}> {
+  const breakdown = {
+    diary: 0,
+    volume: 0,
+    weakness: 0,
+  };
+  const messages: string[] = [];
+  let cappedByDailyLimit = false;
+
+  try {
+    // 1. Check daily cap for diary submission
+    const canEarnDiary = await canEarnDiaryXpToday(userId);
+
+    if (canEarnDiary) {
+      // Grant base diary submission XP (+30 XP)
+      await grantXp(userId, "diary_submit", chatId);
+      breakdown.diary = XP_REWARDS.diary_submit;
+      await incrementDiaryCount(userId);
+      messages.push(`📝 일기 제출 +${XP_REWARDS.diary_submit} XP`);
+    } else {
+      // Daily cap reached
+      cappedByDailyLimit = true;
+      messages.push("⏰ 오늘 일기 XP는 3회까지 지급됩니다");
+    }
+
+    // 2. Volume-based bonuses (requires TTR ≥ 0.4 and within daily cap)
+    // v3.1.1: Simplified to 50/100 word tiers (Issue #133)
+    // Bonuses are cumulative: 100+ words grants both 50 and 100 bonuses
+    if (canEarnDiary) {
+      const wordCount = getWordCount(diaryText);
+      const validForBonus = isValidForVolumeBonus(diaryText);
+
+      if (validForBonus) {
+        // Check each tier and grant XP (bonuses stack)
+        if (wordCount >= 100) {
+          // Grant both 50 and 100 word bonuses
+          await grantXp(userId, "length_50", chatId);
+          breakdown.volume += XP_REWARDS.length_50;
+          await grantXp(userId, "length_100", chatId);
+          breakdown.volume += XP_REWARDS.length_100;
+          messages.push(`📏 50단어+ +${XP_REWARDS.length_50} XP`);
+          messages.push(`📏 100단어+ +${XP_REWARDS.length_100} XP`);
+        } else if (wordCount >= 50) {
+          await grantXp(userId, "length_50", chatId);
+          breakdown.volume += XP_REWARDS.length_50;
+          messages.push(`📏 50단어+ +${XP_REWARDS.length_50} XP`);
+        }
+      } else if (wordCount >= 50) {
+        // Text is long enough but TTR too low
+        messages.push("💡 다양한 단어로 일기를 써보세요! (분량 보너스 미지급)");
+      }
+    }
+
+    // 3. Weakness overcome bonus (daily cap: 1/day)
+    const canEarnWeakness = await canEarnWeaknessOvercomeToday(userId);
+
+    if (canEarnWeakness) {
+      const overcame = await checkWeaknessOvercome(userId, mistakePattern);
+
+      if (overcame) {
+        await grantXp(userId, "weakness_overcome", chatId);
+        breakdown.weakness = XP_REWARDS.weakness_overcome;
+        await incrementWeaknessOvercomeCount(userId);
+        messages.push(`🎉 약점 극복! +${XP_REWARDS.weakness_overcome} XP`);
+      }
+    }
+
+    const totalXp = breakdown.diary + breakdown.volume + breakdown.weakness;
+
+    console.log(
+      `[Diary XP] User ${userId}: +${totalXp} XP (diary: ${breakdown.diary}, volume: ${breakdown.volume}, weakness: ${breakdown.weakness})`
+    );
+
+    return {
+      totalXp,
+      breakdown,
+      messages,
+      cappedByDailyLimit,
+    };
+  } catch (error) {
+    console.error("[Diary XP] ✗ Error granting diary XP:", error);
+    // Non-blocking: return empty result on error
+    return {
+      totalXp: 0,
+      breakdown,
+      messages: [],
+      cappedByDailyLimit: false,
+    };
   }
 }

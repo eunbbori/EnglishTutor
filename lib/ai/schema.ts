@@ -35,6 +35,15 @@ export const correctionSchema = z.object({
     .max(3)
     .optional()
     .describe("1-3 keywords extracted from the diary entry that represent main topics (e.g., 'work', 'food', 'family'). Keep keywords short and in English."),
+  // v3.1.1: XP system feedback
+  xpMessages: z
+    .array(z.string())
+    .optional()
+    .describe("XP reward messages from v3.1.1 system (e.g., '📝 일기 제출 +30 XP', '🎉 약점 극복! +20 XP')"),
+  cappedByDailyLimit: z
+    .boolean()
+    .optional()
+    .describe("True if daily XP cap was reached (3 diary submissions per day)"),
 });
 
 export type AlternativeExpression = z.infer<typeof alternativeSchema>;

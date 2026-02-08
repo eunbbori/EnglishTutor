@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { SelectableText } from "@/components/vocabulary/selectable-text";
 import { OnboardingTooltip } from "@/components/vocabulary/onboarding-tooltip";
+import { XpFeedback } from "@/components/chat/xp-feedback";
 
 interface Alternative {
   type: string;
@@ -27,6 +28,9 @@ interface CorrectionData {
   alternatives: Alternative[];
   mistakeType?: string | null;
   insight?: string;
+  // v3.1.1: XP system
+  xpMessages?: string[];
+  cappedByDailyLimit?: boolean;
 }
 
 interface CorrectionResultProps {
@@ -43,6 +47,8 @@ export function CorrectionResult({ data, onNewEntry, chatId }: CorrectionResultP
     alternatives,
     mistakeType,
     insight,
+    xpMessages,
+    cappedByDailyLimit,
   } = data;
 
   // Check if there were any corrections made
@@ -70,6 +76,15 @@ export function CorrectionResult({ data, onNewEntry, chatId }: CorrectionResultP
 
       {/* Onboarding Tooltip */}
       <OnboardingTooltip />
+
+      {/* XP Feedback (v3.1.1) */}
+      {xpMessages && xpMessages.length > 0 && (
+        <XpFeedback
+          messages={xpMessages}
+          cappedByDailyLimit={cappedByDailyLimit}
+          className="mb-6"
+        />
+      )}
 
       {/* Original & Corrected Comparison */}
       <Card className="mb-6 overflow-hidden">

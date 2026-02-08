@@ -5,6 +5,7 @@ import { vocabulary } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { enrichVocabulary } from "@/lib/ai/vocabulary-enricher";
 import { grantXp } from "@/lib/gamification/xp-service";
+import { canEarnVocabXpToday, incrementVocabCount } from "@/lib/xp/daily-tracking";
 
 // GET /api/vocabulary - Get user's vocabulary list
 export async function GET(req: Request) {
@@ -88,10 +89,22 @@ export async function POST(req: Request) {
       .values(values)
       .returning();
 
-    // Grant XP for expression save (+5 XP)
+    // Grant XP for expression save (+5 XP, max 5/day)
+    // v3.1.1: Added daily cap (5 saves per day)
+    let xpGranted = false;
+    let dailyCapReached = false;
     try {
-      const xpResult = await grantXp(session.user.id, "expression_save", newWord.id);
-      console.log(`[Vocabulary API] XP granted for expression_save: +${xpResult.xpGained} XP`);
+      const canEarn = await canEarnVocabXpToday(session.user.id);
+
+      if (canEarn) {
+        const xpResult = await grantXp(session.user.id, "expression_save", newWord.id);
+        await incrementVocabCount(session.user.id);
+        xpGranted = true;
+        console.log(`[Vocabulary API] XP granted for expression_save: +${xpResult.xpGained} XP`);
+      } else {
+        dailyCapReached = true;
+        console.log(`[Vocabulary API] Daily XP cap reached for expression_save (5/day)`);
+      }
     } catch (error) {
       console.error("[Vocabulary API] Failed to grant XP:", error);
       // Don't fail the request if XP tracking fails (non-blocking)
@@ -101,6 +114,8 @@ export async function POST(req: Request) {
       {
         word: newWord,
         enrichmentFailed, // Let client know if enrichment failed
+        xpGranted, // Whether XP was granted
+        dailyCapReached, // Whether daily cap was reached
       },
       { status: 201 }
     );

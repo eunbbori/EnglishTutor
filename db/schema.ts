@@ -249,7 +249,24 @@ export const vocabulary = pgTable("vocabulary", {
 // v3.0 Gamification Tables
 // ==========================================
 
-// 9. XP History
+// 9. Daily XP Tracking
+// v3.1.1: Tracks daily XP caps to prevent inflation
+export const dailyXpTracking = pgTable("daily_xp_tracking", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  date: date("date").notNull(), // YYYY-MM-DD
+  diaryCount: integer("diary_count").notNull().default(0), // 일기 제출 횟수 (상한 3회)
+  vocabCount: integer("vocab_count").notNull().default(0), // 표현노트 저장 횟수 (상한 5회)
+  weaknessOvercomeCount: integer("weakness_overcome_count").notNull().default(0), // 약점 극복 보상 (상한 1회)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  userIdDateIdx: index("daily_xp_tracking_user_date_idx").on(table.userId, table.date),
+}));
+
+// 10. XP History
 // Tracks all XP gain events for debugging, abuse detection, and analytics
 export const xpHistory = pgTable("xp_history", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -259,18 +276,36 @@ export const xpHistory = pgTable("xp_history", {
   amount: integer("amount").notNull(), // XP gained (positive only)
   action: text("action", {
     enum: [
-      "diary_submit",      // 30 XP
-      "challenge_word",    // 15 XP
-      "perfect_diary",     // 20 XP
-      "expression_save",   // 5 XP
-      "streak_7d",         // 100 XP
-      "streak_30d",        // 500 XP
-      "weekly_quest",      // 80-200 XP
-      "weekly_bonus",      // 100 XP
-      "monthly_challenge", // 1000 XP
-      "welcome_back",      // 50 XP
-      "comeback_kid",      // 100 XP
-      "treasure_chest",    // 10-50 XP
+      // v3.1.1 Core actions
+      "diary_submit",              // 30 XP (하루 3회 상한)
+      "weakness_overcome",         // 20 XP (하루 1회)
+      "length_30",                 // 5 XP (TTR ≥ 0.4)
+      "length_60",                 // 10 XP (TTR ≥ 0.4)
+      "length_100",                // 20 XP (TTR ≥ 0.4)
+      "expression_save",           // 5 XP (하루 5회 상한)
+      // v3.1.1 Streak milestones (7 tiers)
+      "streak_7d",                 // 100 XP
+      "streak_14d",                // 200 XP
+      "streak_30d",                // 500 XP
+      "streak_60d",                // 1000 XP
+      "streak_100d",               // 1500 XP
+      "streak_180d",               // 3000 XP
+      "streak_365d",               // 5000 XP
+      // v3.1.1 Monthly challenge (stepped)
+      "monthly_challenge_15",      // 200 XP
+      "monthly_challenge_20",      // 400 XP
+      "monthly_challenge_25",      // 600 XP
+      // Pro quests
+      "weekly_quest",              // 80-200 XP
+      "weekly_bonus",              // 100 XP
+      "treasure_chest",            // 10-50 XP
+      // Comeback bonuses
+      "welcome_back",              // 50 XP (이전 스트릭 ≥3일)
+      "comeback_kid",              // 100 XP
+      // Deprecated (v3.0)
+      "challenge_word",            // 15 XP (deprecated)
+      "perfect_diary",             // 20 XP (deprecated → weakness_overcome)
+      "monthly_challenge",         // 1000 XP (deprecated → stepped rewards)
     ]
   }).notNull(),
   boosterApplied: boolean("booster_applied").notNull().default(false), // XP 2x booster applied

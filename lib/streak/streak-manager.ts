@@ -228,15 +228,22 @@ export async function recordDiaryEntry(userId: string): Promise<StreakInfo> {
   const freezeCount = await getFreezeCount(userId);
 
   // Check for Welcome Back bonus (3+ days absence)
+  // v3.1.1: Only grant if previous streak was ≥3 days
   let welcomeBackBonus = false;
-  if (gap >= 3) {
+  if (gap >= 3 && streak.previousStreak >= 3) {
     try {
       await grantXp(userId, "welcome_back");
       welcomeBackBonus = true;
-      console.log(`[Streak] ✓ Welcome Back bonus! +50 XP for ${gap}-day absence`);
+      console.log(
+        `[Streak] ✓ Welcome Back bonus! +50 XP for ${gap}-day absence (previous streak: ${streak.previousStreak} days)`
+      );
     } catch (error) {
       console.error("[Streak] Failed to grant Welcome Back XP:", error);
     }
+  } else if (gap >= 3 && streak.previousStreak < 3) {
+    console.log(
+      `[Streak] Welcome Back not granted (previous streak was only ${streak.previousStreak} days, need ≥3)`
+    );
   }
 
   let newCurrentStreak: number;
@@ -308,42 +315,38 @@ export async function recordDiaryEntry(userId: string): Promise<StreakInfo> {
     .where(eq(diaryStreaks.userId, userId));
 
   // Check for streak milestones and grant XP (once per milestone)
+  // v3.1.1: 7 tiers (7/14/30/60/100/180/365 days)
   try {
-    // 7-day milestone (+100 XP)
-    if (newCurrentStreak === 7) {
-      const existing7d = await db
-        .select()
-        .from(xpHistory)
-        .where(
-          and(
-            eq(xpHistory.userId, userId),
-            eq(xpHistory.action, "streak_7d")
+    const MILESTONES = [
+      { days: 7, action: "streak_7d" as const },
+      { days: 14, action: "streak_14d" as const },
+      { days: 30, action: "streak_30d" as const },
+      { days: 60, action: "streak_60d" as const },
+      { days: 100, action: "streak_100d" as const },
+      { days: 180, action: "streak_180d" as const },
+      { days: 365, action: "streak_365d" as const },
+    ];
+
+    for (const milestone of MILESTONES) {
+      if (newCurrentStreak === milestone.days) {
+        // Check if already granted
+        const existingRecord = await db
+          .select()
+          .from(xpHistory)
+          .where(
+            and(
+              eq(xpHistory.userId, userId),
+              eq(xpHistory.action, milestone.action)
+            )
           )
-        )
-        .limit(1);
+          .limit(1);
 
-      if (existing7d.length === 0) {
-        const xpResult = await grantXp(userId, "streak_7d");
-        console.log(`[Streak] ✓ 7-day milestone reached! Granted +${xpResult.xpGained} XP`);
-      }
-    }
-
-    // 30-day milestone (+500 XP)
-    if (newCurrentStreak === 30) {
-      const existing30d = await db
-        .select()
-        .from(xpHistory)
-        .where(
-          and(
-            eq(xpHistory.userId, userId),
-            eq(xpHistory.action, "streak_30d")
-          )
-        )
-        .limit(1);
-
-      if (existing30d.length === 0) {
-        const xpResult = await grantXp(userId, "streak_30d");
-        console.log(`[Streak] ✓ 30-day milestone reached! Granted +${xpResult.xpGained} XP`);
+        if (existingRecord.length === 0) {
+          const xpResult = await grantXp(userId, milestone.action);
+          console.log(
+            `[Streak] ✓ ${milestone.days}-day milestone reached! Granted +${xpResult.xpGained} XP`
+          );
+        }
       }
     }
   } catch (error) {

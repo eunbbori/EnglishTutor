@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getUserXpStatus } from "@/lib/gamification/xp-service";
-import { getXpProgress, getXpForNextLevel } from "@/lib/gamification/xp-constants";
+import { getXpProgress, getXpForNextLevel, getTitleForLevel } from "@/lib/gamification/xp-constants";
+import { getPotentialLevelInfo } from "@/lib/xp/level-rewards";
+import { db } from "@/db";
+import { subscriptions } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 
 const DEFAULT_USER_ID = "default-user";
 
@@ -28,6 +32,26 @@ export async function GET(req: NextRequest) {
       ? new Date() < new Date(xpStatus.boosterExpiresAt)
       : false;
 
+    // v3.1.1: Check premium status and get potential level info
+    let isPremium = false;
+    if (userId !== DEFAULT_USER_ID) {
+      const subscription = await db
+        .select()
+        .from(subscriptions)
+        .where(
+          and(
+            eq(subscriptions.userId, userId),
+            eq(subscriptions.plan, "premium"),
+            eq(subscriptions.status, "active")
+          )
+        )
+        .limit(1);
+
+      isPremium = subscription.length > 0;
+    }
+
+    const potentialInfo = getPotentialLevelInfo(xpStatus.xp, isPremium);
+
     return NextResponse.json({
       success: true,
       data: {
@@ -46,6 +70,13 @@ export async function GET(req: NextRequest) {
           active: boosterActive,
           expiresAt: xpStatus.boosterExpiresAt,
         },
+        // v3.1.1: Potential level info
+        isPremium,
+        potentialLevel: potentialInfo.showPotential ? {
+          level: potentialInfo.potentialLevel,
+          title: getTitleForLevel(potentialInfo.potentialLevel),
+          gap: potentialInfo.levelGap,
+        } : null,
       },
     });
   } catch (error) {

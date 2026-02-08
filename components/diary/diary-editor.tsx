@@ -19,9 +19,6 @@ import {
   Lightbulb,
 } from "lucide-react";
 import { MoodSelector } from "@/components/calendar/mood-selector";
-import { ModeSelector, DiaryMode } from "./mode-selector";
-import { DailyMission } from "./daily-mission";
-import { getTodayWord, checkWordUsage } from "@/lib/missions";
 
 export interface DiaryPrompt {
   id: string;
@@ -82,7 +79,8 @@ function validateDiaryInput(text: string): ValidationResult {
     return { isValid: false, errorMessage: "의미 있는 영어 문장을 써주세요." };
   }
 
-  // 5. Repeated word detection (70%+ same word)
+  // 5. Repeated word detection (50%+ same word)
+  // v3.1.1: Tightened from 70% to 50% for better quality
   const wordCounts = new Map<string, number>();
   words.forEach(word => {
     const normalized = word.toLowerCase();
@@ -90,9 +88,23 @@ function validateDiaryInput(text: string): ValidationResult {
   });
 
   for (const [word, count] of wordCounts) {
-    if (count / words.length >= 0.7) {
+    if (count / words.length >= 0.5) {
       return { isValid: false, errorMessage: "다양한 단어로 일기를 써보세요!" };
     }
+  }
+
+  // 6. TTR check (Type-Token Ratio)
+  // v3.1.1: Warn if TTR < 0.4 (40% unique words minimum for volume bonus)
+  // This is a soft warning - submission is still allowed
+  const uniqueWords = new Set(words.map(w => w.toLowerCase()));
+  const ttr = uniqueWords.size / words.length;
+
+  if (words.length >= 30 && ttr < 0.4) {
+    // Warning message (doesn't block submission)
+    return {
+      isValid: true,
+      errorMessage: "💡 같은 단어 반복이 많아요. 분량 보너스 XP를 받으려면 다양한 단어를 사용해보세요!"
+    };
   }
 
   return { isValid: true, errorMessage: null };
@@ -111,12 +123,6 @@ export function DiaryEditor({
   );
   const [shuffleCount, setShuffleCount] = useState(0);
   const [isShuffling, setIsShuffling] = useState(false);
-  const [mode, setMode] = useState<DiaryMode>("free");
-
-  // Get today's word for challenge mode
-  const todayWord = getTodayWord();
-  const wordUsed =
-    mode === "challenge" ? checkWordUsage(text, todayWord.word) : false;
 
   // Input validation
   const validation = validateDiaryInput(text);
@@ -225,12 +231,8 @@ export function DiaryEditor({
   const weekday = today.toLocaleDateString("ko-KR", { weekday: "long" });
   const year = today.getFullYear();
 
-  // Placeholder text based on mode
+  // Placeholder text - always show inspiration hint placeholder
   const getPlaceholder = () => {
-    if (mode === "challenge") {
-      return `Try to use the word "${todayWord.word}" naturally in your writing. Write about anything you want...`;
-    }
-    // Free mode - always show inspiration hint placeholder
     return (
       selectedPrompt?.placeholder ||
       "How was your day? Write about what happened today..."
@@ -261,11 +263,6 @@ export function DiaryEditor({
         </div>
       </div>
 
-      {/* Mode Selector - Responsive */}
-      <div className="mb-4 sm:mb-5 lg:mb-6">
-        <ModeSelector mode={mode} onModeChange={setMode} disabled={isLoading} />
-      </div>
-
       {/* Mood Selector - Responsive */}
       <div className="mb-4 sm:mb-5 lg:mb-6 flex justify-center">
         <MoodSelector
@@ -275,14 +272,8 @@ export function DiaryEditor({
         />
       </div>
 
-      {/* Daily Mission (Challenge Mode) */}
-      {mode === "challenge" && (
-        <DailyMission word={todayWord} isCompleted={wordUsed} />
-      )}
-
-      {/* Inspiration Hint (Free Mode only) - Responsive */}
-      {mode === "free" && (
-        <div className="mb-4 sm:mb-5 lg:mb-6">
+      {/* Inspiration Hint - Responsive */}
+      <div className="mb-4 sm:mb-5 lg:mb-6">
           <div className="bg-ds-bg-secondary border-2 border-ds-border-light rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm">
             <div className="flex items-start gap-2 sm:gap-3">
               <div className="p-1.5 sm:p-2 bg-ds-pastel-yellow/40 rounded-lg border border-ds-pastel-yellow flex-shrink-0">
@@ -317,8 +308,7 @@ export function DiaryEditor({
               </div>
             </div>
           </div>
-        </div>
-      )}
+      </div>
 
       {/* Diary Paper - Responsive */}
       <div className="relative">

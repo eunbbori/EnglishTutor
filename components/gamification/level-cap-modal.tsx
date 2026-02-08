@@ -9,9 +9,21 @@ import Link from "next/link";
 interface LevelCapModalProps {
   isOpen: boolean;
   onClose: () => void;
+  // v3.1.1: Potential level display
+  currentLevel?: number;
+  potentialLevel?: number;
+  currentTitle?: string;
+  potentialTitle?: string;
 }
 
-export function LevelCapModal({ isOpen, onClose }: LevelCapModalProps) {
+export function LevelCapModal({
+  isOpen,
+  onClose,
+  currentLevel = 10,
+  potentialLevel,
+  currentTitle = "Daily Writer",
+  potentialTitle,
+}: LevelCapModalProps) {
   if (!isOpen) return null;
 
   const premiumBenefits = [
@@ -22,6 +34,8 @@ export function LevelCapModal({ isOpen, onClose }: LevelCapModalProps) {
     "AI Pen Pal 답장",
     "보물상자 & 퀘스트",
   ];
+
+  const showPotentialLevel = potentialLevel && potentialLevel > currentLevel;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -54,12 +68,30 @@ export function LevelCapModal({ isOpen, onClose }: LevelCapModalProps) {
           {/* Current Status */}
           <div className="text-center p-3 bg-muted rounded-lg">
             <Badge variant="secondary" className="text-lg px-4 py-2 mb-2">
-              Lv.10 (Daily Writer)
+              🔓 Lv.{currentLevel} ({currentTitle})
             </Badge>
             <p className="text-sm text-muted-foreground">
               현재 레벨에서 더 이상 레벨업할 수 없어요
             </p>
           </div>
+
+          {/* Potential Level Display (v3.1.1) */}
+          {showPotentialLevel && (
+            <div className="text-center p-4 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Lock className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                <span className="text-sm font-medium text-purple-900 dark:text-purple-100">
+                  잠재 레벨
+                </span>
+              </div>
+              <Badge variant="outline" className="text-lg px-4 py-2 mb-2 bg-white dark:bg-gray-900 border-purple-300 dark:border-purple-700">
+                💎 Lv.{potentialLevel} {potentialTitle && `(${potentialTitle})`}
+              </Badge>
+              <p className="text-xs text-purple-700 dark:text-purple-300">
+                프리미엄으로 전환하면 즉시 이 레벨로 승급됩니다!
+              </p>
+            </div>
+          )}
 
           {/* Premium Benefits */}
           <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-4">
@@ -78,9 +110,11 @@ export function LevelCapModal({ isOpen, onClose }: LevelCapModalProps) {
           </div>
 
           {/* XP Notice */}
-          <div className="text-xs text-muted-foreground text-center bg-muted p-2 rounded">
-            💡 XP는 계속 쌓여요! 프리미엄 전환 시 즉시 레벨이 반영됩니다
-          </div>
+          {!showPotentialLevel && (
+            <div className="text-xs text-muted-foreground text-center bg-muted p-2 rounded">
+              💡 XP는 계속 쌓여요! 프리미엄 전환 시 즉시 레벨이 반영됩니다
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex gap-2">

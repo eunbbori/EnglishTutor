@@ -14,7 +14,7 @@
 | 영역 | 구현 현황 | 코드 위치 |
 |------|----------|----------|
 | 일기 & AI 교정 | LangGraph + Gemini 교정 파이프라인 (원문/교정문/한국어 설명/대안 표현 3종) | `lib/ai/graph.ts`, `app/api/chat/route.ts` |
-| 챌린지 모드 | 오늘의 단어 20종 순환, 사용 여부 감지, 프롬프트 셔플 3회/일 | `lib/missions.ts`, `components/diary/daily-mission.tsx` |
+| 분량 기반 보상 | 50단어 이상 +10 XP, 100단어 이상 +20 XP | `app/api/chat/route.ts` |
 | 스트릭 | 연속 작성 일수, 최장 기록, 총 작성 수 | `lib/streak/streak-manager.ts` |
 | 캘린더 뷰 | 월별 달력, 기분 이모지, 키워드, 단어 수, 미리보기 | `components/calendar/`, `app/api/calendar/` |
 | 기록 조회 | 최신순 목록, 상세 보기 | `app/history/`, `app/api/history/` |
@@ -82,6 +82,9 @@ Sprint 4  Weekly & Monthly Quests (XP 보상 필요)
 Sprint 5  AI Pen Pal (독립적, Sprint 1 이후 언제든 가능)
    │
    ↓
+Sprint 5.5  Writing Analysis & Discovery Rewards (사후 발견형 보상)
+   │
+   ↓
 Sprint 6  IAP & Monetization (모든 상품 존재 필요)
    │
    ↓
@@ -113,8 +116,10 @@ Sprint 7  Integration & Polish
 | 0-4 | DB 마이그레이션 Phase 4 (DROP) | Backend | DROP TABLE checkpoints. DROP COLUMN chats.summary, user_profiles.level (old enum). ALTER user_mistakes.mistake_type enum |
 | 0-5 | Deprecated 코드 제거 | Backend | `lib/ai/checkpointer.ts` 삭제. `lib/ai/summarizer.ts` 삭제. `components/profile/level-selector.tsx` 삭제. `lib/ai/graph.ts`에서 체크포인트/요약 호출 제거 |
 | 0-6 | AI 파이프라인 정리 | Backend | `lib/ai/graph.ts`: 체크포인트/요약 의존성 제거 후 교정 동작 확인. 프롬프트에서 detailed/concise 분기 제거 (임시로 detailed 기본값 통일) |
-| 0-7 | 입력 검증 추가 | Frontend | `components/diary/diary-editor.tsx`: 빈 텍스트 → 버튼 비활성화, 최소 20자, 최소 5단어, 반복 문자 5회, 반복 단어 70% |
-| 0-8 | 구독 가격 변경 | Backend + Frontend | `lib/payment/toss.ts`: ₩9,900 → ₩6,900. `app/pricing/page.tsx`: 가격 표시 업데이트 |
+| 0-7 | 입력 검증 추가 | Frontend | `components/diary/diary-editor.tsx`: 빈 텍스트 → 버튼 비활성화, 최소 20자, 최소 5단어, 반복 문자 5회, 반복 단어 **50%** (어뷰징 방지 강화) |
+| 0-8 | 분량 기반 XP 보상 추가 | Backend | `app/api/chat/route.ts`: 단어 수 계산 로직 추가, 50단어+ → +10 XP, 100단어+ → +20 XP |
+| 0-9 | 챌린지 모드 제거 | Frontend + Backend | `lib/missions.ts`, `components/diary/daily-mission.tsx` 삭제. UI에서 챌린지 모드 선택 제거 |
+| 0-10 | 구독 가격 변경 | Backend + Frontend | `lib/payment/toss.ts`: ₩9,900 → ₩6,900. `app/pricing/page.tsx`: 가격 표시 업데이트 |
 
 > **⚠️ 무료 교정 3→1 축소는 이 시점에서 코드만 준비하고, 실제 적용은 Sprint 3 (보물상자) 배포와 동시에.** 게이미피케이션 없이 무료 횟수만 줄이면 이탈 위험.
 
@@ -151,18 +156,18 @@ app/pricing/page.tsx                      — 가격 표시 변경
 
 | # | 태스크 | 유형 | 상세 |
 |---|--------|------|------|
-| 1-1 | XP 상수 & 레벨 계산 | Backend | `lib/gamification/xp-constants.ts`: XP 보상 테이블, 레벨 구간 (누적 XP → 레벨), 칭호 매핑. 로그 곡선 레벨업 threshold 계산 함수 |
-| 1-2 | XP Service | Backend | `lib/gamification/xp-service.ts`: `grantXp(userId, action, referenceId?)` — XP 부여 + xp_history INSERT + user_profiles.xp 갱신 + 레벨업 판정 + 부스터 2x 체크. 트랜잭션 원자성 보장 |
-| 1-3 | 교정 Flow XP 연동 | Backend | `app/api/chat/route.ts`: 교정 완료 후 diary_submit +30 XP. 챌린지 단어 사용 시 challenge_word +15 XP. 오답 0개 시 perfect_diary +20 XP |
+| 1-1 | XP 상수 & 레벨 계산 | Backend | `lib/gamification/xp-constants.ts`: XP 보상 테이블 (하루 상한 포함), 레벨 공식 `floor(80 × N^1.7)`, 칭호 매핑. 레벨 계산 함수 구현 |
+| 1-2 | XP Service | Backend | `lib/gamification/xp-service.ts`: `grantXp(userId, action, referenceId?)` — XP 부여 + 하루 상한 체크 + xp_history INSERT + user_profiles.xp 갱신 + 레벨업 판정 + 부스터 2x 체크. 트랜잭션 원자성 보장 |
+| 1-3 | 교정 Flow XP 연동 | Backend | `app/api/chat/route.ts`: ① 하루 교정 횟수 체크 (3회 상한), ② diary_submit +30 XP (상한 내), ③ 단어 수 계산 + TTR 검증 (≥0.4), ④ 30/60/100단어+ 분량 보너스, ⑤ 약점 극복 판정 (최근 TOP 오답 미발생 시 +20 XP, 하루 1회) |
 | 1-4 | 표현노트 XP 연동 | Backend | `app/api/vocabulary/route.ts`: POST 성공 시 expression_save +5 XP |
-| 1-5 | 스트릭 마일스톤 XP | Backend | `lib/streak/streak-manager.ts`: 7일 달성 시 streak_7d +100 XP. 30일 달성 시 streak_30d +500 XP (각 1회) |
+| 1-5 | 스트릭 마일스톤 XP | Backend | `lib/streak/streak-manager.ts`: 7일 +100, 14일 +150, 30일 +500, 60일 +800, 100일 +1,500, 180일 +2,000, 365일 +5,000 XP (각 1회, 칭호 포함) |
 | 1-6 | 레벨 기반 적응형 프롬프트 | AI | `lib/ai/graph.ts`: user_profiles.xp_level 조회 → Lv.1-10 한국어 70-90% / Lv.11-20 50-70% / Lv.21+ 30-50% 프롬프트 분기 |
 | 1-7 | 무료 Lv.10 상한 | Backend | xp-service: 무료 사용자 Lv.10 초과 시 XP 누적하되 레벨 고정. 프리미엄 전환 시 즉시 레벨 반영 |
 | 1-8 | XP API | Backend | `GET /api/user/xp` — 현재 XP, 레벨, 칭호, 다음 레벨까지 남은 XP, 부스터 상태 |
 | 1-9 | 헤더 레벨 UI | Frontend | 헤더에 레벨 뱃지 + 칭호 + 프로그레스 바 (다음 레벨까지 남은 XP) |
 | 1-10 | 레벨업 연출 | Frontend | 레벨업 시 축하 모달: 새 칭호 + XP 획득 애니메이션 |
 | 1-11 | XP 토스트 | Frontend | 일기 제출 후 "+30 XP" 토스트. 부스터 시 "+60 XP (2x)" |
-| 1-12 | Lv.10 상한 안내 | Frontend | 무료 Lv.10 도달 시 "더 높은 레벨에 도전하세요" 프리미엄 안내 모달 |
+| 1-12 | Lv.10 특별 보상 | Frontend + Backend | ① 무료 Lv.10 **최초** 도달 시 3일 프리미엄 체험권 자동 부여 (1회), ② 잠재 레벨 표시 (예: "프리미엄 시 Lv.13"), ③ 체험 종료 후 성과 요약 + 전환 유도 |
 
 #### 완료 조건
 
@@ -198,7 +203,7 @@ components/gamification/xp-toast.tsx       — XP 획득 토스트
 |---|--------|------|------|
 | 2-1 | Streak Manager 리팩토링 | Backend | `lib/streak/streak-manager.ts` 전면 수정: Freeze 자동 소비, Comeback 자격 판정, previous_streak 저장, comeback_days 추적 |
 | 2-2 | Freeze 소비 로직 | Backend | gap==2 + freeze_count>0 → freeze 자동 소비 (streak_freeze_count -1, streak_freeze_used_at = yesterday), streak 유지 |
-| 2-3 | Comeback Bonus 로직 | Backend | 3일+ 미접속 후 복귀 → Welcome Back 50 XP. 리셋 후 3일 연속 → Comeback Kid 칭호 + 100 XP. 7일 연속 → previous_streak * 0.5 복구 |
+| 2-3 | Comeback Bonus 로직 | Backend | 3일+ 미접속 후 복귀 → Welcome Back 50 XP (**단, 이전 스트릭 3일 이상 조건**). 리셋 후 3일 연속 → Comeback Kid 칭호 + 100 XP. 7일 연속 → previous_streak * 0.5 복구 |
 | 2-4 | Streak API 확장 | Backend | `GET /api/streak`: freeze_count, comeback 상태 포함 |
 | 2-5 | Freeze 보유 UI | Frontend | 헤더 불꽃 옆 방패 아이콘 + 보유 수 (0/1/2) |
 | 2-6 | Freeze 사용 알림 | Frontend | "보호막이 사용되었어요! 남은 보호막: N개" 토스트 |
@@ -274,7 +279,7 @@ components/gamification/chest-teaser.tsx         — 무료 사용자 티저
 | # | 태스크 | 유형 | 상세 |
 |---|--------|------|------|
 | 4-1 | 주간 퀘스트 생성 | Backend | `lib/gamification/quest-scheduler.ts`: lazy generation — 조회 시 해당 주 퀘스트 없으면 5종 풀에서 3개 선택 → weekly_quests INSERT |
-| 4-2 | 퀘스트 진행률 추적 | Backend | `lib/gamification/quest-tracker.ts`: 일기 제출/표현노트 저장/챌린지 단어 사용 이벤트 시 current_count 갱신. target_count 도달 → completed + XP 부여 |
+| 4-2 | 퀘스트 진행률 추적 | Backend | `lib/gamification/quest-tracker.ts`: 일기 제출/표현노트 저장/분량 달성/약점 극복 이벤트 시 current_count 갱신. target_count 도달 → completed + XP 부여 |
 | 4-3 | 주간 보너스 판정 | Backend | 동일 주 3개 중 2개+ 완료 시 weekly_bonus +100 XP |
 | 4-4 | 월간 챌린지 데이터 | Backend | monthly_challenges 시드 데이터 관리. 일기에서 표현 사용 감지 → used_expressions 업데이트 |
 | 4-5 | 퀘스트 API | Backend | `GET /api/quests/weekly` — 이번 주 퀘스트 + 진행률 (무료: slot 1만). `GET /api/quests/monthly` — 이번 달 챌린지 + 진행률 (Pro only) |
@@ -343,6 +348,41 @@ lib/ai/penpal.ts                          — Pen Pal 생성 서비스
 app/api/chat/[chatId]/penpal/route.ts     — Pen Pal 조회 API
 components/penpal/penpal-card.tsx          — 답장 카드
 components/penpal/penpal-teaser.tsx        — 무료 미리보기
+```
+
+---
+
+### Sprint 5.5: Writing Analysis & Discovery Rewards (사후 발견형 보상)
+
+> **목표**: 사용자가 자연스럽게 쓴 일기에서 좋은 점을 AI가 발견하여 보상. "미션 달성"이 아닌 "발견의 기쁨" 제공.
+
+**선행**: Sprint 1 (XP 시스템)
+
+#### 태스크
+
+| # | 태스크 | 유형 | 상세 |
+|---|--------|------|------|
+| 5.5-1 | 작성 분석 Service | Backend | `lib/ai/writing-analyzer.ts`: 교정 결과를 분석하여 좋은 점 발견. 새로운 표현 사용, 다양한 시제, 복문 구조, 자연스러운 연결어 등 |
+| 5.5-2 | 발견 기반 XP 부여 | Backend | 발견된 각 항목마다 XP 부여. 예: 새로운 표현 +5 XP, 다양한 시제 +10 XP, 복문 구조 +15 XP |
+| 5.5-3 | 분석 결과 구조 설계 | Backend | 교정 결과에 `writingAnalysis` 필드 추가. discoveries 배열로 발견 항목 전달 |
+| 5.5-4 | 작성 분석 카드 UI | Frontend | 교정 결과 하단에 "오늘의 작성 분석" 카드 표시. 발견된 좋은 점 + 획득 XP |
+| 5.5-5 | 발견 애니메이션 | Frontend | 각 발견 항목이 순차적으로 나타나는 연출 (0.3초 간격) |
+| 5.5-6 | 분석 실패 처리 | Backend | 분석 실패 시 교정은 정상 동작 (비차단) |
+
+#### 완료 조건
+
+- [ ] 교정 후 작성 분석 자동 실행
+- [ ] 새로운 표현, 시제, 복문 등 5가지 이상 발견 패턴 구현
+- [ ] 발견된 항목마다 XP 부여
+- [ ] 작성 분석 카드 UI 표시
+- [ ] 분석 실패 시에도 교정 정상 동작
+
+#### 신규 파일
+
+```
+lib/ai/writing-analyzer.ts           — 작성 분석 서비스
+app/api/chat/route.ts                — 분석 통합 (수정)
+components/diary/writing-analysis.tsx — 작성 분석 카드
 ```
 
 ---
@@ -424,8 +464,8 @@ components/payment/trigger-banner.tsx      — 과금 트리거 배너
 
 | Feature | Sprint | 작업 유형 |
 |---------|--------|----------|
-| F1: 일기 & AI 교정 | **0** (입력 검증, 정책 변경) | 기존 수정 |
-| F2: 챌린지 모드 | **0** (유지) | 변경 최소 |
+| F1: 일기 & AI 교정 | **0** (입력 검증, 정책 변경, 분량 기반 보상) | 기존 수정 |
+| F2: (삭제됨) 챌린지 모드 | - | 제거 |
 | F3: XP & 레벨 | **1** | 전체 신규 |
 | F4: 스트릭 & 위기 구제 | **2** | 기존 확장 |
 | F5: 보물상자 | **3** | 전체 신규 |
@@ -448,7 +488,7 @@ v3.0을 한 번에 출시하지 않고 **4단계 점진 배포**.
 |------|---------|----------------|------------|
 | **v3.0-alpha** | Sprint 0 + 1 | XP/레벨 등장, 레벨업 연출, 레벨 기반 설명 | 게이미피케이션 첫 경험 |
 | **v3.0-beta** | Sprint 2 + 3 | Streak Freeze, 보물상자 + **무료 교정 3→1 축소** | 프리미엄 가치 상승과 동시에 무료 제한 |
-| **v3.0-rc** | Sprint 4 + 5 | 퀘스트, AI Pen Pal | 게임성 완성 + 킬러 피쳐 |
+| **v3.0-rc** | Sprint 4 + 5 + 5.5 | 퀘스트, AI Pen Pal, 작성 분석 | 게임성 완성 + 킬러 피쳐 + 발견 보상 |
 | **v3.0** | Sprint 6 + 7 | IAP 상점, 전체 Polish | 수익화 on |
 
 ---
