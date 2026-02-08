@@ -118,18 +118,21 @@ Sprint 7  Integration & Polish
 | 0-6 | AI 파이프라인 정리 | Backend | `lib/ai/graph.ts`: 체크포인트/요약 의존성 제거 후 교정 동작 확인. 프롬프트에서 detailed/concise 분기 제거 (임시로 detailed 기본값 통일) |
 | 0-7 | 입력 검증 추가 | Frontend | `components/diary/diary-editor.tsx`: 빈 텍스트 → 버튼 비활성화, 최소 20자, 최소 5단어, 반복 문자 5회, 반복 단어 **50%** (어뷰징 방지 강화) |
 | 0-8 | 분량 기반 XP 보상 추가 | Backend | `app/api/chat/route.ts`: 단어 수 계산 로직 추가, 50단어+ → +10 XP, 100단어+ → +20 XP |
-| 0-9 | 챌린지 모드 제거 | Frontend + Backend | `lib/missions.ts`, `components/diary/daily-mission.tsx` 삭제. UI에서 챌린지 모드 선택 제거 |
+| 0-9 | 챌린지 모드 제거 | Frontend + Backend | `lib/missions.ts`, `components/diary/daily-mission.tsx`, `components/diary/mode-selector.tsx` 삭제. UI에서 챌린지 모드 선택 제거. 오늘의 주제 섹션 제거 (#133) |
 | 0-10 | 구독 가격 변경 | Backend + Frontend | `lib/payment/toss.ts`: ₩9,900 → ₩6,900. `app/pricing/page.tsx`: 가격 표시 업데이트 |
+| 0-11 | Opt-in 영감 힌트 UX | Frontend | "💡 뭘 쓸지 모르겠어요" 버튼 추가 (기본 숨김). 클릭 시 영감 카드 펼침 (무제한 셔플). "✕ 닫기" 버튼 추가 (#135) |
 
 > **⚠️ 무료 교정 3→1 축소는 이 시점에서 코드만 준비하고, 실제 적용은 Sprint 3 (보물상자) 배포와 동시에.** 게이미피케이션 없이 무료 횟수만 줄이면 이탈 위험.
 
 #### 완료 조건
 
-- [ ] `drizzle-kit generate` + `drizzle-kit migrate` 성공
-- [ ] 기존 기능 (교정, 스트릭, 캘린더, 표현노트, 기록 조회) 정상 동작
-- [ ] deprecated 코드 삭제 후 `npm run build` 에러 없음
-- [ ] 입력 검증 규칙 5종 동작
-- [ ] 가격 ₩6,900 반영
+- [x] `drizzle-kit generate` + `drizzle-kit migrate` 성공
+- [x] 기존 기능 (교정, 스트릭, 캘린더, 표현노트, 기록 조회) 정상 동작
+- [x] deprecated 코드 삭제 후 `npm run build` 에러 없음
+- [x] 입력 검증 규칙 5종 동작
+- [x] 가격 ₩6,900 반영
+- [x] 챌린지 모드 제거 완료 (#133)
+- [ ] Opt-in 영감 힌트 UX 구현 (#135)
 
 #### 영향 받는 파일
 
@@ -139,7 +142,10 @@ lib/ai/graph.ts                           — 체크포인트/요약 제거
 lib/ai/checkpointer.ts                    — 삭제
 lib/ai/summarizer.ts                      — 삭제
 components/profile/level-selector.tsx      — 삭제
-components/diary/diary-editor.tsx          — 입력 검증 추가
+lib/missions.ts                           — 삭제 (챌린지 모드)
+components/diary/daily-mission.tsx         — 삭제 (챌린지 모드)
+components/diary/mode-selector.tsx         — 삭제 (챌린지 모드)
+components/diary/diary-editor.tsx          — 입력 검증 추가, 영감 힌트 Opt-in 변경
 lib/payment/toss.ts                       — 가격 변경
 app/pricing/page.tsx                      — 가격 표시 변경
 ```
