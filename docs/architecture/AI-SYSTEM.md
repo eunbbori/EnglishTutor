@@ -1,6 +1,25 @@
 # AI System
 
-> **Last Updated**: 2026-02-12
+| 항목 | 값 |
+|------|-----|
+| **버전** | 2.1.0 |
+| **상태** | `완료` |
+| **최종 수정일** | 2026-02-12 |
+| **관련 문서** | [CHAT-SEQUENCE.md](./CHAT-SEQUENCE.md) · [API-SPEC.md](./API-SPEC.md) · [DATA-MODEL.md](./DATA-MODEL.md) · [COMMON-SYSTEMS.md](./COMMON-SYSTEMS.md) |
+
+---
+
+## 목차
+
+1. [개요](#1-개요)
+2. [LangGraph 워크플로우](#2-langgraph-워크플로우)
+3. [AI 응답 스키마](#3-ai-응답-스키마-libaischemats)
+4. [적응형 프롬프트](#4-적응형-프롬프트-level-based)
+5. [Fact Memory](#5-fact-memory-반복-오답-추적)
+6. [어휘 보강](#6-어휘-보강-vocabulary-enrichment)
+7. [인사이트 생성](#7-인사이트-생성-recurring-mistake-insight)
+8. [시스템 프롬프트 요약](#8-시스템-프롬프트-요약)
+9. [관련 파일 참조](#9-관련-파일-참조)
 
 ---
 
@@ -53,6 +72,37 @@ ConversationState = {
     │  1. 교정 결과에서 오답 패턴 감지 시 DB 저장
     ↓
 [END]
+```
+
+#### Mermaid StateGraph 다이어그램
+
+```mermaid
+stateDiagram-v2
+    [*] --> generate_response
+
+    state generate_response {
+        [*] --> BuildContext: buildAdaptiveContext()
+        BuildContext --> LoadProfile: getOrCreateUserProfile()
+        LoadProfile --> LoadMistakes: getRecentTopMistakes(3)
+        LoadMistakes --> ComposePrompt: 레벨별 가이드라인 생성
+        ComposePrompt --> CallLLM: Gemini API 호출
+        CallLLM --> ParseJSON: JSON 추출 (regex)
+        ParseJSON --> ValidateZod: correctionSchema.safeParse()
+        ValidateZod --> QualityCheck: validateResponseForLevel()
+        QualityCheck --> [*]
+    }
+
+    generate_response --> update_memory
+
+    state update_memory {
+        [*] --> CheckPattern: mistakePattern 존재?
+        CheckPattern --> SaveMistake: Yes → addRecurringMistake()
+        CheckPattern --> Skip: No → 스킵
+        SaveMistake --> [*]
+        Skip --> [*]
+    }
+
+    update_memory --> [*]
 ```
 
 ### 노드 상세
@@ -180,6 +230,22 @@ UserProfileManager.addRecurringMistake()
     └─ 새 패턴: 신규 추가
     ↓
 userProfiles.recurringMistakes 업데이트 (JSONB)
+```
+
+```mermaid
+flowchart LR
+    A[교정 완료] --> B{mistakePattern<br/>감지?}
+    B -->|No| C[종료]
+    B -->|Yes| D[update_memory 노드]
+    D --> E[addRecurringMistake]
+    E --> F{기존 패턴?}
+    F -->|Yes| G["count +1<br/>examples 업데이트<br/>(최근 5개)"]
+    F -->|No| H[신규 패턴 추가]
+    G --> I["user_profiles.recurringMistakes<br/>JSONB 업데이트"]
+    H --> I
+
+    style A fill:#e8f4f8,stroke:#2196f3
+    style I fill:#e8f5e9,stroke:#4caf50
 ```
 
 ---

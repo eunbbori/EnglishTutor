@@ -1,8 +1,23 @@
 # Chat Sequence — 일기 교정 흐름 상세
 
-> **Last Updated**: 2026-02-12
+| 항목 | 값 |
+|------|-----|
+| **버전** | 1.3.0 |
+| **상태** | `완료` |
+| **최종 수정일** | 2026-02-12 |
+| **관련 문서** | [API-SPEC.md](./API-SPEC.md) · [AI-SYSTEM.md](./AI-SYSTEM.md) · [COMMON-SYSTEMS.md](./COMMON-SYSTEMS.md) · [DATA-MODEL.md](./DATA-MODEL.md) |
 
 이 문서는 사용자 일기 제출부터 교정 결과 반환까지의 전체 시퀀스를 상세히 기술한다.
+
+---
+
+## 목차
+
+1. [전체 시퀀스 다이어그램](#1-전체-시퀀스-다이어그램)
+2. [단계별 상세](#2-단계별-상세)
+3. [에러 처리 전략](#3-에러-처리-전략)
+4. [클라이언트 사이드 흐름](#4-클라이언트-사이드-흐름)
+5. [데이터 흐름 요약](#5-데이터-흐름-요약-테이블-영향)
 
 ---
 
@@ -66,6 +81,53 @@
       │  + X-Chat-Id     │                    │                   │
       │◄─────────────────┤                    │                   │
       │                  │                    │                   │
+```
+
+### Mermaid 시퀀스 다이어그램
+
+```mermaid
+sequenceDiagram
+    participant C as Client (Browser)
+    participant API as API Route<br/>/api/chat
+    participant LG as LangGraph<br/>(graph.ts)
+    participant AI as Gemini API
+    participant DB as Neon Postgres
+
+    C->>API: POST /api/chat {messages, mood}
+
+    rect rgb(240, 248, 255)
+        Note over API: 전처리
+        API->>API: [1] auth() — 인증 확인
+        API->>DB: [2] getUsageStatus — 사용량 확인
+        DB-->>API: UsageStatus
+        API->>DB: [3] getOrCreateUserProfile
+        DB-->>API: UserProfile
+        API->>DB: [4] 기존 메시지 로드
+        DB-->>API: messages[]
+    end
+
+    rect rgb(255, 243, 224)
+        Note over LG: LangGraph 실행
+        API->>LG: graph.invoke(state)
+        LG->>LG: buildAdaptiveContext()
+        LG->>AI: model.invoke(SystemMessage + context)
+        AI-->>LG: JSON correction
+        LG->>LG: Zod validation + Quality check
+        LG->>DB: update_memory (오답 패턴 저장)
+        LG-->>API: correctionResult
+    end
+
+    rect rgb(232, 245, 233)
+        Note over API: 후처리
+        API->>DB: [5] 메시지 저장 (user + assistant)
+        API->>DB: [6] incrementUsage
+        API->>DB: [7] recordDiaryEntry (스트릭)
+        API->>DB: [8] grantDiaryXp (XP 부여)
+        API->>DB: [9] saveOrUpdateMistake
+        API->>API: [10] checkRecurringPattern → insight
+    end
+
+    API-->>C: JSON Response + X-Chat-Id header
 ```
 
 ---

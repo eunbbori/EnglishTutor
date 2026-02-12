@@ -1,7 +1,25 @@
 # Data Model
 
-> **Last Updated**: 2026-02-12
-> **스키마 파일**: `db/schema.ts`
+| 항목 | 값 |
+|------|-----|
+| **버전** | 2.0.0 |
+| **상태** | `완료` |
+| **최종 수정일** | 2026-02-12 |
+| **스키마 파일** | `db/schema.ts` |
+| **관련 문서** | [db-schema/01-TABLE-DEFINITIONS.md](./db-schema/01-TABLE-DEFINITIONS.md) · [db-schema/02-ERD.md](./db-schema/02-ERD.md) · [db-schema/03-SEED-DATA.md](./db-schema/03-SEED-DATA.md) · [OVERVIEW.md](./OVERVIEW.md) |
+
+> **역할 구분**: 이 문서는 데이터 모델의 **설계 의도와 관계**를 다룬다. 컬럼 수준의 DDL 상세는 [01-TABLE-DEFINITIONS.md](./db-schema/01-TABLE-DEFINITIONS.md), 시각적 ERD는 [02-ERD.md](./db-schema/02-ERD.md) 참조.
+
+---
+
+## 목차
+
+1. [개요](#1-개요)
+2. [도메인별 테이블 목록](#2-도메인별-테이블-목록)
+3. [핵심 테이블 상세](#3-핵심-테이블-상세)
+4. [JSONB 필드 스키마](#4-jsonb-필드-스키마)
+5. [주요 관계](#5-주요-관계)
+6. [마이그레이션](#6-마이그레이션)
 
 ---
 
@@ -279,6 +297,66 @@ chats (1) ─── (N) messages
 weekly_quests (1) ─── (N) user_quest_progress
 monthly_challenges (1) ─── (N) user_challenge_progress
 ```
+
+### Mermaid ER 다이어그램
+
+```mermaid
+erDiagram
+    users ||--o{ accounts : "OAuth 연결"
+    users ||--o{ sessions : "세션"
+    users ||--|| user_profiles : "프로필 (1:1)"
+    users ||--|| diary_streaks : "스트릭 (1:1)"
+    users ||--o| subscriptions : "구독 (논리적 1:1)"
+    users ||--o{ chats : "일기 세션"
+    users ||--o{ vocabulary : "표현노트"
+    users ||--o{ daily_usage : "일일 사용량"
+    users ||--o{ xp_history : "XP 이력"
+    users ||--o{ daily_xp_tracking : "일일 XP 추적"
+    users ||--o{ treasure_chest_log : "보물상자"
+    users ||--o{ iap_purchases : "IAP 구매"
+
+    chats ||--o{ messages : "메시지 (CASCADE)"
+
+    weekly_quests ||--o{ user_quest_progress : "퀘스트 진행"
+    monthly_challenges ||--o{ user_challenge_progress : "챌린지 진행"
+
+    users {
+        text id PK
+        text name
+        text email
+        timestamp created_at
+    }
+    chats {
+        uuid id PK
+        text userId FK
+        text title
+        text mood
+        integer wordCount
+    }
+    messages {
+        uuid id PK
+        uuid chatId FK
+        text role
+        text content
+    }
+    user_profiles {
+        uuid id PK
+        text userId UK
+        integer xp
+        integer xpLevel
+        text title
+        jsonb recurringMistakes
+    }
+    diary_streaks {
+        uuid id PK
+        text userId UK
+        integer currentStreak
+        integer longestStreak
+        date lastWrittenAt
+    }
+```
+
+> 전체 ERD 상세는 [@docs/architecture/db-schema/02-ERD.md](./db-schema/02-ERD.md) 참조.
 
 ---
 

@@ -1,6 +1,24 @@
 # UI Design
 
-> **Last Updated**: 2026-02-12
+| 항목 | 값 |
+|------|-----|
+| **버전** | 1.2.0 |
+| **상태** | `완료` |
+| **최종 수정일** | 2026-02-12 |
+| **관련 문서** | [DIRECTORY.md](./DIRECTORY.md) · [CHAT-SEQUENCE.md](./CHAT-SEQUENCE.md) · [COMMON-SYSTEMS.md](./COMMON-SYSTEMS.md) · [API-SPEC.md](./API-SPEC.md) |
+
+---
+
+## 목차
+
+1. [기술 스택](#1-기술-스택)
+2. [페이지 구조](#2-페이지-구조)
+3. [컴포넌트 계층 구조](#3-컴포넌트-계층-구조)
+4. [핵심 컴포넌트 상세](#4-핵심-컴포넌트-상세)
+5. [모달 시스템](#5-모달-시스템)
+6. [반응형 디자인](#6-반응형-디자인)
+7. [디자인 시스템 토큰](#7-디자인-시스템-토큰)
+8. [Shadcn UI 컴포넌트 사용](#8-shadcn-ui-컴포넌트-사용)
 
 ---
 
@@ -107,6 +125,47 @@ RootLayout (app/layout.tsx)
               ├─ TrialGrantedModal     — 체험판 부여
               ├─ UpgradeModal          — Premium 업그레이드
               └─ XpToast               — XP 획득 토스트
+```
+
+### Mermaid 컴포넌트 트리
+
+```mermaid
+graph TD
+    ROOT["RootLayout<br/>(app/layout.tsx)"]
+    ROOT --> PROV["Providers<br/>(SessionProvider)"]
+    PROV --> HOME["Home<br/>(app/page.tsx)"]
+
+    HOME --> HEADER[Header]
+    HEADER --> LB[LevelBadge]
+    HEADER --> SB[Streak Badge]
+    HEADER --> FB["Freeze Badge ❄️"]
+    HEADER --> UC[UsageCounter]
+    HEADER --> LOGIN[LoginButton]
+
+    HOME --> CAL["📅 CalendarView"]
+    CAL --> CD[CalendarDay]
+    CAL --> CQV[CalendarQuickView]
+
+    HOME --> WRITE["✏️ DiaryEditor"]
+    WRITE --> MS[MoodSelector]
+    WRITE --> TA["Textarea<br/>(노트북 스타일)"]
+
+    HOME --> RESULT["📋 CorrectionResult"]
+    RESULT --> MB["MessageBubble<br/>(user)"]
+    RESULT --> CCARD[CorrectionCard]
+    RESULT --> ST[SelectableText]
+    ST --> WT[WordTooltip]
+
+    HOME --> MODALS[Modals]
+    MODALS --> LUM[LevelupModal]
+    MODALS --> LCM[LevelCapModal]
+    MODALS --> TGM[TrialGrantedModal]
+    MODALS --> UPM[UpgradeModal]
+
+    style HOME fill:#e8f4f8,stroke:#2196f3
+    style CAL fill:#fff3e0,stroke:#ff9800
+    style WRITE fill:#e8f5e9,stroke:#4caf50
+    style RESULT fill:#f3e5f5,stroke:#9c27b0
 ```
 
 ---

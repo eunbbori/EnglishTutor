@@ -1,7 +1,48 @@
 # API Specification
 
-> **Last Updated**: 2026-02-12
-> **Base URL**: `/api`
+| 항목 | 값 |
+|------|-----|
+| **버전** | 2.0.0 |
+| **상태** | `완료` |
+| **최종 수정일** | 2026-02-12 |
+| **Base URL** | `/api` |
+| **관련 문서** | [CHAT-SEQUENCE.md](./CHAT-SEQUENCE.md) · [COMMON-SYSTEMS.md](./COMMON-SYSTEMS.md) · [AI-SYSTEM.md](./AI-SYSTEM.md) · [DATA-MODEL.md](./DATA-MODEL.md) |
+
+---
+
+## 목차
+
+1. [인증 규칙](#인증-규칙)
+2. [엔드포인트 목록](#엔드포인트-목록)
+3. [POST `/api/chat`](#1-post-apichat--ai-일기-교정)
+4. [GET `/api/history`](#2-get-apihistory--일기-히스토리)
+5. [GET `/api/history/[id]`](#3-get-apihistoryid--일기-상세)
+6. [GET `/api/calendar`](#4-get-apicalendaryearmonth--캘린더)
+7. [표현노트 API](#5-표현노트-apivocabulary)
+8. [GET `/api/streak`](#6-get-apistreak--스트릭)
+9. [GET `/api/usage`](#7-get-apiusage--사용량)
+10. [GET `/api/user/xp`](#8-get-apiuserxp--xp레벨)
+11. [사용자 프로필 API](#9-사용자-프로필-apiuserprofile)
+12. [보물상자 API](#10-보물상자-apitreasure-chest)
+13. [POST `/api/payment/confirm`](#11-post-apipaymentconfirm--결제-확인)
+
+---
+
+## 공통 규칙
+
+### 응답 형식
+
+- **Content-Type**: `application/json`
+- **문자 인코딩**: UTF-8
+- **타임스탬프 형식**: ISO 8601 (`2026-02-12T10:00:00Z`)
+
+### 공통 에러 응답
+
+| Status | 설명 | 발생 조건 |
+|--------|------|----------|
+| 401 | Unauthorized | 인증 필요 API에 비로그인 접근 |
+| 429 | Too Many Requests | 일일 사용량 초과 |
+| 500 | Internal Server Error | 서버/AI 오류 |
 
 ---
 
