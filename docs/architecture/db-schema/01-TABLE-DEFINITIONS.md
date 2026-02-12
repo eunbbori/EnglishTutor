@@ -1,9 +1,25 @@
 # Table Definitions
 
-> **Last Updated**: 2026-02-12
-> **소스 파일**: `db/schema.ts`
-> **ORM**: Drizzle ORM (`drizzle-orm/pg-core`)
-> **Database**: Neon (Serverless Postgres)
+| 항목 | 값 |
+|------|-----|
+| **버전** | 2.0.0 |
+| **상태** | `완료` |
+| **최종 수정일** | 2026-02-12 |
+| **소스 파일** | `db/schema.ts` |
+| **ORM** | Drizzle ORM (`drizzle-orm/pg-core`) |
+| **Database** | Neon (Serverless Postgres) |
+| **관련 문서** | [DATA-MODEL.md](../DATA-MODEL.md) · [02-ERD.md](./02-ERD.md) · [03-SEED-DATA.md](./03-SEED-DATA.md) |
+
+> **역할**: 이 문서는 모든 테이블의 **컬럼 수준 DDL 상세**(타입, 제약조건, 인덱스)를 기술한다. 설계 의도와 관계도는 [DATA-MODEL.md](../DATA-MODEL.md), ERD는 [02-ERD.md](./02-ERD.md) 참조.
+
+---
+
+## 목차
+
+- [Auth 도메인](#auth-도메인) — `users` · `accounts` · `sessions` · `verification_tokens`
+- [Billing 도메인](#billing-도메인) — `subscriptions` · `daily_usage`
+- [Core 도메인](#core-도메인) — `chats` · `messages` · `user_profiles` · `user_mistakes` · `vocabulary` · `learning_stats`
+- [Gamification 도메인](#gamification-도메인) — `diary_streaks` · `daily_xp_tracking` · `xp_history` · `treasure_chest_log` · `weekly_quests` · `user_quest_progress` · `monthly_challenges` · `user_challenge_progress` · `iap_purchases`
 
 ---
 

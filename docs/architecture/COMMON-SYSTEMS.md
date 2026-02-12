@@ -1,8 +1,25 @@
 # Common Systems
 
-> **Last Updated**: 2026-02-12
+| 항목 | 값 |
+|------|-----|
+| **버전** | 2.0.0 |
+| **상태** | `완료` |
+| **최종 수정일** | 2026-02-12 |
+| **관련 문서** | [OVERVIEW.md](./OVERVIEW.md) · [API-SPEC.md](./API-SPEC.md) · [CHAT-SEQUENCE.md](./CHAT-SEQUENCE.md) · [DATA-MODEL.md](./DATA-MODEL.md) · [db-schema/03-SEED-DATA.md](./db-schema/03-SEED-DATA.md) |
 
-이 문서는 여러 기능에서 공통으로 사용되는 횡단 관심사(cross-cutting concerns)를 다룬다.
+이 문서는 여러 기능에서 공통으로 사용되는 횡단 관심사(Cross-Cutting Concerns)를 다룬다.
+
+---
+
+## 목차
+
+1. [인증 (Authentication)](#1-인증-authentication)
+2. [구독 & 사용량 관리](#2-구독--사용량-관리-subscription--usage)
+3. [스트릭 시스템](#3-스트릭-시스템-streak)
+4. [XP & 레벨 시스템](#4-xp--레벨-시스템-gamification)
+5. [결제 시스템](#5-결제-시스템-payment)
+6. [보물상자 시스템](#6-보물상자-시스템-treasure-chest)
+7. [입력 검증](#7-입력-검증-input-validation)
 
 ---
 
@@ -26,6 +43,27 @@ NextAuth 처리
     └─ sessions 테이블: 세션 생성
     ↓
 session.user.id 로 API 인증
+```
+
+```mermaid
+sequenceDiagram
+    participant U as 사용자
+    participant App as Next.js App
+    participant NA as NextAuth v5
+    participant G as Google OAuth
+    participant DB as Neon Postgres
+
+    U->>App: 로그인 버튼 클릭
+    App->>NA: signIn("google")
+    NA->>G: OAuth 요청
+    G-->>U: Google 로그인 화면
+    U->>G: 인증 승인
+    G-->>NA: OAuth 토큰
+    NA->>DB: accounts 테이블 INSERT/UPDATE
+    NA->>DB: users 테이블 INSERT/UPDATE
+    NA->>DB: sessions 테이블 INSERT
+    NA-->>App: session (user.id 포함)
+    App-->>U: 로그인 완료
 ```
 
 ### 주요 코드
@@ -151,6 +189,31 @@ recordDiaryEntry(userId) 호출 시:
     └─ 해당 일수 도달 시 XP 보상 (1회 한정)
 ```
 
+```mermaid
+flowchart TD
+    A["recordDiaryEntry(userId)"] --> B{"오늘 이미<br/>작성했는가?"}
+    B -->|Yes| C["현재 스트릭 그대로 반환"]
+    B -->|No| D{"마지막 작성일과<br/>gap 계산"}
+    D -->|gap = 1| E["스트릭 +1<br/>(연속 유지)"]
+    D -->|"gap = 2<br/>+ Freeze 보유"| F["Freeze 소비<br/>→ 스트릭 +1"]
+    D -->|"gap ≥ 2<br/>(Freeze 없음)"| G["스트릭 리셋 → 1"]
+    G --> H{"gap ≥ 3 +<br/>이전 스트릭 ≥ 3일?"}
+    H -->|Yes| I["Welcome Back +50 XP<br/>Comeback 추적 시작"]
+    H -->|No| J["마일스톤 확인"]
+    I --> J
+    E --> J
+    F --> J
+    J --> K{"7/14/30/60/<br/>100/180/365일?"}
+    K -->|도달| L["마일스톤 XP 보상"]
+    K -->|미도달| M["완료"]
+    L --> M
+
+    style A fill:#e8f4f8,stroke:#2196f3
+    style G fill:#ffebee,stroke:#f44336
+    style I fill:#fff3e0,stroke:#ff9800
+    style L fill:#e8f5e9,stroke:#4caf50
+```
+
 ### Streak Freeze
 
 - **용도**: 하루 빠져도 스트릭 유지
@@ -257,6 +320,29 @@ TTR = 고유 단어 수 / 전체 단어 수
 [5] 서버: 토스페이먼츠 API로 결제 확인
 [6] DB 업데이트: subscriptions 또는 iap_purchases 테이블
 [7] 결과 페이지: /payment/success 또는 /payment/fail
+```
+
+```mermaid
+sequenceDiagram
+    participant U as 사용자
+    participant C as Client
+    participant TOSS as 토스페이먼츠 SDK
+    participant API as /api/payment/confirm
+    participant TA as Toss Payments API
+    participant DB as Neon Postgres
+
+    U->>C: Premium 구독 요청
+    C->>TOSS: 결제 요청
+    TOSS-->>U: 결제 화면 (카드/간편결제)
+    U->>TOSS: 결제 승인
+    TOSS-->>C: redirect (paymentKey, orderId, amount)
+    C->>API: POST {paymentKey, orderId, amount}
+    API->>API: 금액 검증
+    API->>TA: 결제 확인 API 호출
+    TA-->>API: 승인 결과
+    API->>DB: subscriptions INSERT/UPDATE
+    API-->>C: {success: true}
+    C-->>U: /payment/success 페이지
 ```
 
 ### 상품 유형

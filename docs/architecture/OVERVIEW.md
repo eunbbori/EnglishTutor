@@ -1,7 +1,25 @@
 # Architecture Overview
 
-> **Last Updated**: 2026-02-12
-> **Version**: 3.1.1
+| 항목 | 값 |
+|------|-----|
+| **버전** | 3.1.1 |
+| **상태** | `완료` |
+| **최종 수정일** | 2026-02-12 |
+| **관련 문서** | [DIRECTORY.md](./DIRECTORY.md) · [AI-SYSTEM.md](./AI-SYSTEM.md) · [DATA-MODEL.md](./DATA-MODEL.md) · [API-SPEC.md](./API-SPEC.md) · [CHAT-SEQUENCE.md](./CHAT-SEQUENCE.md) · [UI-DESIGN.md](./UI-DESIGN.md) · [COMMON-SYSTEMS.md](./COMMON-SYSTEMS.md) |
+
+---
+
+## 목차
+
+1. [프로젝트 개요](#1-프로젝트-개요)
+2. [기술 스택](#2-기술-스택)
+3. [고수준 시스템 아키텍처](#3-고수준-시스템-아키텍처)
+4. [핵심 처리 흐름](#4-핵심-처리-흐름-일기-교정)
+5. [주요 아키텍처 레이어](#5-주요-아키텍처-레이어)
+6. [데이터 모델 요약](#6-데이터-모델-요약)
+7. [환경 변수](#7-환경-변수)
+8. [배포 환경](#8-배포-환경)
+9. [관련 문서](#9-관련-문서)
 
 ---
 
@@ -83,9 +101,45 @@
 └──────────────┘  └──────────────┘  └──────────────────┘
 ```
 
+### Mermaid 시스템 아키텍처
+
+```mermaid
+graph TB
+    subgraph Client["Client · Browser"]
+        DE[DiaryEditor<br/>입력/기분]
+        CC[CorrectionCard<br/>교정 결과]
+        GM[Gamification<br/>XP/Level/Streak]
+    end
+
+    subgraph Server["Next.js API Routes"]
+        CHAT["POST /api/chat<br/>─────────────────<br/>1. Auth 확인<br/>2. Usage 제한<br/>3. LangGraph 호출<br/>4. 메시지 저장<br/>5. 스트릭 업데이트<br/>6. XP 부여<br/>7. 인사이트 생성"]
+        REST["기타 API<br/>/history · /streak · /xp<br/>/vocabulary · /treasure"]
+    end
+
+    subgraph External["External Services"]
+        GEMINI["Google Gemini API<br/>(AI 교정)"]
+        NEON["Neon Postgres<br/>(21+ 테이블)"]
+        TOSS["Toss Payments<br/>(결제)"]
+    end
+
+    DE -->|POST /api/chat| CHAT
+    CHAT -->|JSON Response| CC
+    CC --> GM
+    CHAT -->|LLM 호출| GEMINI
+    CHAT -->|Drizzle ORM| NEON
+    REST --> NEON
+    REST -->|결제 확인| TOSS
+
+    style Client fill:#e8f4f8,stroke:#2196f3
+    style Server fill:#fff3e0,stroke:#ff9800
+    style External fill:#f3e5f5,stroke:#9c27b0
+```
+
 ---
 
 ## 4. 핵심 처리 흐름 (일기 교정)
+
+> 상세 시퀀스는 [@docs/architecture/CHAT-SEQUENCE.md](./CHAT-SEQUENCE.md) 참조.
 
 ```
 사용자 일기 입력
@@ -115,6 +169,31 @@
     │
     ▼
 JSON 응답 반환
+```
+
+### Mermaid 처리 흐름
+
+```mermaid
+flowchart TD
+    A["사용자 일기 입력"] --> B{"[1] 인증 확인<br/>(NextAuth v5)"}
+    B -->|비로그인| B1["기록 미저장 모드"]
+    B -->|로그인| C{"[2] 사용량 확인<br/>(dailyUsage)"}
+    C -->|초과| C1["429 USAGE_LIMIT_EXCEEDED"]
+    C -->|잔여| D["[3] LangGraph 실행"]
+    B1 --> D
+    D --> D1["generate_response<br/>· 적응형 프롬프트<br/>· 오답 패턴 컨텍스트<br/>· Gemini API 호출<br/>· Zod 스키마 검증"]
+    D1 --> D2["update_memory<br/>· 오답 패턴 DB 저장"]
+    D2 --> E["[4] 후처리"]
+    E --> E1["메시지 DB 저장"]
+    E --> E2["사용량 증가"]
+    E --> E3["스트릭 업데이트"]
+    E --> E4["XP 부여 (TTR 검증)"]
+    E --> E5["인사이트 생성 (3회+)"]
+    E1 & E2 & E3 & E4 & E5 --> F["JSON 응답 반환"]
+
+    style A fill:#e8f4f8,stroke:#2196f3
+    style C1 fill:#ffebee,stroke:#f44336
+    style F fill:#e8f5e9,stroke:#4caf50
 ```
 
 ---

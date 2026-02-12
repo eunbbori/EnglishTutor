@@ -1,6 +1,23 @@
 # Directory Structure
 
-> **Last Updated**: 2026-02-12
+| 항목 | 값 |
+|------|-----|
+| **버전** | 1.2.0 |
+| **상태** | `완료` |
+| **최종 수정일** | 2026-02-12 |
+| **관련 문서** | [OVERVIEW.md](./OVERVIEW.md) · [UI-DESIGN.md](./UI-DESIGN.md) · [AI-SYSTEM.md](./AI-SYSTEM.md) |
+
+---
+
+## 목차
+
+1. [프로젝트 루트](#프로젝트-루트)
+2. [`app/` — Next.js App Router](#app--nextjs-app-router)
+3. [`components/` — React 컴포넌트](#components--react-컴포넌트)
+4. [`lib/` — 비즈니스 로직 & 유틸리티](#lib--비즈니스-로직--유틸리티)
+5. [`db/` — 데이터베이스](#db--데이터베이스)
+6. [기타 디렉토리](#기타-디렉토리)
+7. [파일 배치 규칙](#파일-배치-규칙)
 
 ---
 
@@ -261,15 +278,15 @@ drizzle/
 
 ## 파일 배치 규칙
 
-| 유형 | 위치 | 설명 |
-|------|------|------|
-| 페이지 | `app/` | Next.js App Router 규칙 준수 |
-| API 핸들러 | `app/api/` | Route Handler (server-only) |
-| 공통 UI | `components/ui/` | Shadcn 기반 프리미티브 |
-| 기능 UI | `components/{feature}/` | 기능별 컴포넌트 (chat, calendar 등) |
-| AI 로직 | `lib/ai/` | LangGraph, 스키마, 검증 |
-| DB 로직 | `lib/db/` 또는 `db/` | 스키마는 `db/`, 쿼리 헬퍼는 `lib/db/` |
-| 게이미피케이션 | `lib/gamification/` + `lib/xp/` | 핵심은 `gamification/`, 보조는 `xp/` |
-| 유틸리티 | `lib/utils.ts` 또는 `lib/{domain}/` | 공통은 `utils.ts`, 도메인별은 하위 디렉토리 |
-| 타입 정의 | `types/` | 전역 TypeScript 타입 |
-| 스크립트 | `scripts/` | 일회성/마이그레이션 스크립트 |
+| 유형 | 위치 | 설명 | 관련 문서 |
+|------|------|------|----------|
+| 페이지 | `app/` | Next.js App Router 규칙 준수 | [UI-DESIGN.md](./UI-DESIGN.md) |
+| API 핸들러 | `app/api/` | Route Handler (server-only) | [API-SPEC.md](./API-SPEC.md) |
+| 공통 UI | `components/ui/` | Shadcn 기반 프리미티브 | [UI-DESIGN.md](./UI-DESIGN.md) |
+| 기능 UI | `components/{feature}/` | 기능별 컴포넌트 | [UI-DESIGN.md](./UI-DESIGN.md) |
+| AI 로직 | `lib/ai/` | LangGraph, 스키마, 검증 | [AI-SYSTEM.md](./AI-SYSTEM.md) |
+| DB 로직 | `lib/db/` 또는 `db/` | 스키마 `db/`, 쿼리 헬퍼 `lib/db/` | [DATA-MODEL.md](./DATA-MODEL.md) |
+| 게이미피케이션 | `lib/gamification/` + `lib/xp/` | 핵심 `gamification/`, 보조 `xp/` | [COMMON-SYSTEMS.md](./COMMON-SYSTEMS.md) |
+| 유틸리티 | `lib/utils.ts` 또는 `lib/{domain}/` | 공통 `utils.ts`, 도메인별 하위 디렉토리 | — |
+| 타입 정의 | `types/` | 전역 TypeScript 타입 | — |
+| 스크립트 | `scripts/` | 일회성/마이그레이션 스크립트 | — |
